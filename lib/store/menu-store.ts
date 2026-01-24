@@ -43,10 +43,10 @@ export const useMenuStore = create<MenuState>((set, get) => ({
   },
 
   getMenuItemsByCategory: (categoryId) => {
-    return get().menuItems.filter((item) => item.category === categoryId && item.available);
+    return get().menuItems.filter((item) => item.categoryId === categoryId && item.available);
   },
 
   getMenuItemsBySection: (sectionId) => {
-    return get().menuItems.filter((item) => item.section === sectionId && item.available);
+    return get().menuItems.filter((item) => item.sectionId === sectionId && item.available);
   },
 }));
