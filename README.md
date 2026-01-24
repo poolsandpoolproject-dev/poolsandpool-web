@@ -70,7 +70,9 @@ This project is currently in initial setup. Development instructions will be add
 ## Documentation
 
 - **[PRD.md](./PRD.md)** - Complete Product Requirements Document
+- **[Architecture](./docs/architecture.md)** - Application structure, routing, layouts (Public & Admin), and API design
 - **[Admin Dashboard UX/UI](./docs/admin-dashboard-ux.md)** - Detailed UX/UI specifications for admin dashboard, screens, flows, and Events module
+- **[Branding Guidelines](./docs/branding.md)** - Brand colors, typography, spacing, and visual identity guidelines
 
 ## License
 
