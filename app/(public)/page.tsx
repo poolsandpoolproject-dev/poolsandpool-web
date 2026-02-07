@@ -314,16 +314,18 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/footer.png")' }} />
         <div className="absolute inset-0 bg-[#071b2f]/70" />
 
-        <div className="relative z-10 p-4">
+        <div className="relative z-10 p-4 max-h-[320px]">
           <div className="mx-auto overflow-hidden">
-            <iframe
-              title="Pools & Pool location"
-              className="h-[320px] w-full md:h-[420px] lg:h-[480px]"
-              loading="eager"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.8122478285086!2d3.2627492108925615!3d6.6701723932970465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b975c6616c2ad%3A0xd2332136489f232b!2s1%20Wuraola%20St%2C%20Alagbado%2C%20Lagos%20100271%2C%20Lagos!5e0!3m2!1sen!2sng!4v1770471518423!5m2!1sen!2sng"
-            />
+            <div className="relative aspect-video w-full">
+              <iframe
+                title="Pools & Pool location"
+                className="absolute inset-0 h-full w-full"
+                loading="eager"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.8122478285086!2d3.2627492108925615!3d6.6701723932970465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b975c6616c2ad%3A0xd2332136489f232b!2s1%20Wuraola%20St%2C%20Alagbado%2C%20Lagos%20100271%2C%20Lagos!5e0!3m2!1sen!2sng!4v1770471518423!5m2!1sen!2sng"
+              />
+            </div>
           </div>
         </div>
       </section>
