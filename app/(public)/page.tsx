@@ -94,7 +94,7 @@ export default function HomePage() {
               />
             </Link>
             <Link
-              href="/#about-us"
+              href="/"
               aria-label="Main menu"
               className="inline-flex items-center justify-center text-white hover:text-white transition-colors"
             >
