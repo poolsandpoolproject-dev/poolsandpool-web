@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Clock, Flame, GlassWater, UtensilsCrossed } from "lucide-react";
+import { ChevronDown, Clock, Flame, GlassWater, MapPin, UtensilsCrossed } from "lucide-react";
 import { motion } from "framer-motion";
 import { Autoplay, EffectFade } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { MenuIcon } from "@/components/ui/menu-icon";
+import { TikTokIcon } from "@/components/ui/tiktok-icon";
 import { getEnabledCategories } from "@/lib/data";
 
 import "swiper/css";
@@ -82,11 +83,18 @@ export default function HomePage() {
 
         <div className="relative z-10 min-h-screen flex flex-col">
           <div className="px-4 pt-6 flex items-center justify-between gap-3">
-            <Link href="/" className="text-white font-serif text-2xl tracking-wide hover:text-white transition-colors">
-              Ps & P
+            <Link href="/" className="inline-flex items-center hover:opacity-95 transition-opacity">
+              <Image
+                src="/logo/logo.png"
+                alt="PS & P"
+                width={110}
+                height={44}
+                className="w-30 h-auto object-contain"
+                priority
+              />
             </Link>
             <Link
-              href="/#about-us"
+              href="/"
               aria-label="Main menu"
               className="inline-flex items-center justify-center text-white hover:text-white transition-colors"
             >
@@ -104,7 +112,7 @@ export default function HomePage() {
               whileInView="show"
               viewport={heroViewport}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="text-white text-2xl font-medium tracking-[0.45em] uppercase"
+              className="text-white text-2xl font-semibold  uppercase font-serif"
             >
               Welcome to
             </motion.div>
@@ -114,20 +122,11 @@ export default function HomePage() {
               whileInView="show"
               viewport={heroViewport}
               transition={{ duration: 0.55, ease: "easeOut", delay: 0.05 }}
-              className="xl:mt-6 mt-4 font-serif xl:text-[50px] text-[40px] sm:text-5xl md:text-6xl font-bold text-white tracking-wide"
+              className="xl:mt-6 mt-4 font-serif text-5xl md:text-6xl font-bold text-white"
             >
               Pools & Pool Lounge
             </motion.h1>
-            <motion.div
-              variants={heroItem}
-              initial="hidden"
-              whileInView="show"
-              viewport={heroViewport}
-              transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
-              className="mt-2 text-white text-sm sm:text-base tracking-[0.25em] uppercase"
-            >
-              Resto Lounge
-            </motion.div>
+           
 
             <div className="mt-14 md:mt-24 lg:mt-22 xl:mt-20 w-full max-w-[200px] md:max-w-[300px] lg:max-w-[500px] xl:max-w-4xl">
               {heroCategories.length > 0 ? (
@@ -203,7 +202,7 @@ export default function HomePage() {
                 whileInView="show"
                 viewport={heroViewport}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                className="text-xs tracking-[0.35em] uppercase text-[#FED75E] font-serif"
+                className="text-xs uppercase text-[#FED75E] font-serif"
               >
                 POOLS & POOL story
               </motion.div>
@@ -213,7 +212,7 @@ export default function HomePage() {
                 whileInView="show"
                 viewport={heroViewport}
                 transition={{ duration: 0.55, ease: "easeOut", delay: 0.05 }}
-                className="mt-2 font-serif text-4xl sm:text-5xl font-bold text-white"
+                className="mt-2 font-serif text-[50px] font-semibold text-white"
               >
                 About Us
               </motion.h2>
@@ -239,7 +238,7 @@ export default function HomePage() {
               transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
               className="w-full lg:justify-self-end"
             >
-            <div className="w-full lg:max-w-xl xl:max-w-2xl mx-auto lg:mx-0 rounded-3xl overflow-hidden shadow-2xl shadow-black/30 p-2.5">
+          <div className="w-full lg:max-w-xl xl:max-w-2xl mx-auto lg:mx-0 rounded-3xl overflow-hidden shadow-2xl shadow-black/30 p-2.5">
 
                 <div className="relative aspect-4/5 w-full">
                   <Swiper
@@ -261,6 +260,167 @@ export default function HomePage() {
                   </Swiper>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        </Container>
+      </section>
+
+      <section className="relative overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: 'url("/unveil.png")' }}
+        />
+        <div className="absolute inset-0 bg-[#071b2f]/70" />
+
+        <Container className="relative z-10 py-16 sm:py-20 xl:py-28">
+          <div className="max-w-4xl mx-auto text-center">
+            <motion.h2
+              variants={heroItem}
+              initial="hidden"
+              whileInView="show"
+              viewport={heroViewport}
+              transition={{ duration: 0.55, ease: "easeOut" }}
+              className="font-serif text-[50px] font-semibold text-white"
+            >
+              UNVEIL A WORLD OF DELIGHTS
+            </motion.h2>
+
+            <motion.div
+              variants={heroItem}
+              initial="hidden"
+              whileInView="show"
+              viewport={heroViewport}
+              transition={{ duration: 0.5, ease: "easeOut", delay: 0.08 }}
+              className="mt-6 mx-auto h-px w-28 bg-white"
+            />
+
+            <motion.div
+              variants={heroItem}
+              initial="hidden"
+              whileInView="show"
+              viewport={heroViewport}
+              transition={{ duration: 0.5, ease: "easeOut", delay: 0.14 }}
+              className="mt-6  text-sm sm:text-base text-white font-jost-sans"
+            >
+              Explore our enticing menu and unlock a realm of delectable offerings at Pools & Pool. From tantalizing
+              appetizers to mouthwatering main courses and irresistible desserts, our menu is a gateway to a world of
+              culinary delights.
+            </motion.div>
+          </div>
+        </Container>
+      </section>
+
+      <section className="relative overflow-hidden max-h-[320px]">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/footer.png")' }} />
+        <div className="absolute inset-0 bg-[#071b2f]/70" />
+
+        <div className="relative z-10 p-4">
+          <motion.div
+            variants={heroItem}
+            initial="hidden"
+            whileInView="show"
+            viewport={heroViewport}
+            transition={{ duration: 0.55, ease: "easeOut" }}
+            className="mx-auto overflow-hidden border-white/15 bg-white/5"
+          >
+            <div className="relative aspect-video w-full">
+              <iframe
+                title="Pools & Pool location"
+                className="absolute inset-0 h-full w-full"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.8122478285086!2d3.2627492108925615!3d6.6701723932970465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b975c6616c2ad%3A0xd2332136489f232b!2s1%20Wuraola%20St%2C%20Alagbado%2C%20Lagos%20100271%2C%20Lagos!5e0!3m2!1sen!2sng!4v1770471518423!5m2!1sen!2sng"
+              />
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden ">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/footer.png")' }} />
+        <div className="absolute inset-0 bg-[#071b2f]/70" />
+       
+        <Container className="relative z-10 py-40">
+          <div className="max-w-4xl mx-auto text-center">
+            
+
+            <motion.div
+              variants={heroItem}
+              initial="hidden"
+              whileInView="show"
+              viewport={heroViewport}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="flex justify-center"
+            >
+              <Image
+                src="/logo/logo.png"
+                alt="PS & P"
+                width={160}
+                height={64}
+                className="w-40 h-auto object-contain"
+              />
+            </motion.div>
+
+            <motion.h2
+              variants={heroItem}
+              initial="hidden"
+              whileInView="show"
+              viewport={heroViewport}
+              transition={{ duration: 0.55, ease: "easeOut", delay: 0.06 }}
+              className="mt-4 font-serif text-[40px] font-semibold text-white"
+            >
+              AWAITING YOUR ARRIVAL. EVERY NIGHT
+            </motion.h2>
+
+            <motion.div
+              variants={heroItem}
+              initial="hidden"
+              whileInView="show"
+              viewport={heroViewport}
+              transition={{ duration: 0.5, ease: "easeOut", delay: 0.12 }}
+              className="mt-5 space-y-4 text-white text-lg md:text-xl font-serif"
+            >
+              <div>From 12:00 PM to 12:00 AM</div>
+              <div className="">1 Wuraola Street off AIT ROAD behind Emmatos Superstores, Omoreghe Kola, Alagbado</div>
+              <div>+234 703 973 6454</div>
+            </motion.div>
+
+            <motion.div
+              variants={heroItem}
+              initial="hidden"
+              whileInView="show"
+              viewport={heroViewport}
+              transition={{ duration: 0.5, ease: "easeOut", delay: 0.18 }}
+              className="mt-8 flex flex-col items-center gap-5"
+            >
+              <Button
+                asChild
+                variant="outline"
+                className="h-12 rounded-xl font-serif uppercase border border-[#FED75E]/70 bg-[#FED75E] px-8 text-[#071b2f] shadow-lg shadow-black/30 hover:bg-[#f6c93d] hover:text-[#071b2f]"
+              >
+                <a
+                  href="https://maps.app.goo.gl/pvEm6dvsytznFkN37"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MapPin className="size-4" />
+                  Find us on Google Maps
+                </a>
+              </Button>
+
+              <div className="flex items-center gap-4 text-white">
+                <Link href="https://www.tiktok.com/@poolsandpool" target="_blank">
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center size-12  hover:text-[#FED75E]/70 transition-color cursor-pointer"
+                  aria-label="TikTok"
+                >
+                  <TikTokIcon className="size-7" />
+                </button>
+                </Link>
+              </div>
+
+              <div className="text-base text-white font-serif uppercase">© PoolS &amp; Pool Lounge {new Date().getFullYear()}</div>
             </motion.div>
           </div>
         </Container>

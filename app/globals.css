@@ -134,6 +134,7 @@
   /* Typography */
   --font-serif: var(--font-zalora-display), ui-serif, serif;
   --font-sans: var(--font-zalora), system-ui, -apple-system, sans-serif;
+  --font-jost-sans: var(--font-jost), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono, monospace);
 
   /* Font Sizes */

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Jost } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -17,6 +18,12 @@ const zaloraDisplay = localFont({
   weight: "700",
 });
 
+const jost = Jost({
+  variable: "--font-jost",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Pools & Pool - Luxurious Lounge & Bar",
   description: "Digital menu for Pools & Pool Luxurious Lounge & Bar. Browse our menu of food, drinks, and more.",
@@ -29,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${zalora.variable} ${zaloraDisplay.variable} font-sans antialiased`}>
+      <body className={`${zalora.variable} ${zaloraDisplay.variable} ${jost.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>
