@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
+import { Providers } from "./providers";
 
-const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
+const zalora = localFont({
+  src: "../public/zalora-regular.otf",
+  variable: "--font-zalora",
   display: "swap",
+  weight: "400",
 });
 
-const playfairDisplay = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin"],
+const zaloraDisplay = localFont({
+  src: "../public/zalora-inline-bold-grunge.otf",
+  variable: "--font-zalora-display",
   display: "swap",
+  weight: "700",
 });
 
 export const metadata: Metadata = {
@@ -26,10 +29,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${playfairDisplay.variable} font-sans antialiased`}
-      >
-        {children}
+      <body className={`${zalora.variable} ${zaloraDisplay.variable} font-sans antialiased`}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

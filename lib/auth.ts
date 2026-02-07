@@ -3,81 +3,52 @@
  * Dummy authentication logic (will be replaced with API integration)
  */
 
-/**
- * Check if user is authenticated
- */
+import { auth } from "@/lib/api";
+
 export function isAuthenticated(): boolean {
   if (typeof window === "undefined") return false;
 
-  const token = localStorage.getItem("admin_token");
-  const email = localStorage.getItem("admin_email");
-
-  // Dummy check - in production, validate token with API
-  return !!(token && email);
+  return document.cookie.includes("admin_token=");
 }
 
-/**
- * Get current admin user
- */
 export function getCurrentUser() {
   if (typeof window === "undefined") return null;
 
-  const email = localStorage.getItem("admin_email");
-  const token = localStorage.getItem("admin_token");
+  const match = document.cookie.match(/(?:^|;\s*)admin_token=([^;]+)/);
+  const token = match ? decodeURIComponent(match[1]) : null;
 
-  if (!email || !token) return null;
+  if (!token) return null;
 
   return {
-    email,
     token,
   };
 }
 
-/**
- * Login function (dummy)
- */
-export function login(email: string, password: string): Promise<boolean> {
-  // Dummy credentials
-  const DUMMY_CREDENTIALS = {
-    email: "admin@poolsandpool.com",
-    password: "admin123",
-  };
+export async function login(email: string, password: string): Promise<boolean> {
+  if (typeof window === "undefined") return false;
 
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      if (email === DUMMY_CREDENTIALS.email && password === DUMMY_CREDENTIALS.password) {
-        const token = "dummy-admin-token-" + Date.now();
+  try {
+    const res = await auth.login(email, password);
+    const token = res.accessToken;
+    const maxAge = typeof res.expiresIn === "number" ? res.expiresIn : 60 * 60 * 12;
 
-        // Set cookie (for middleware)
-        document.cookie = `admin_token=${token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
-        document.cookie = `admin_email=${email}; path=/; max-age=${60 * 60 * 24 * 7}`;
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    document.cookie = `admin_token=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; samesite=lax${secure}`;
 
-        // Set localStorage (for client-side)
-        localStorage.setItem("admin_token", token);
-        localStorage.setItem("admin_email", email);
-
-        resolve(true);
-      } else {
-        resolve(false);
-      }
-    }, 500);
-  });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-/**
- * Logout function
- */
-export function logout(): void {
+export async function logout(): Promise<void> {
   if (typeof window === "undefined") return;
 
-  // Clear cookies
-  document.cookie = "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-  document.cookie = "admin_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-
-  // Clear localStorage
-  localStorage.removeItem("admin_token");
-  localStorage.removeItem("admin_email");
-
-  // Redirect to login
-  window.location.href = "/admin/login";
+  try {
+    await auth.logout();
+  } catch {
+  } finally {
+    document.cookie = "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    window.location.href = "/admin/login";
+  }
 }

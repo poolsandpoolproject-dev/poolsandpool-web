@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Menu,
-  X,
+  ChevronLeft,
   LayoutDashboard,
   FolderTree,
   Folder,
@@ -31,6 +31,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { logout } from "@/lib/auth";
+import { authHooks } from "@/lib/api";
+import { LogoutConfirmationDialog } from "@/components/admin/logout-confirmation-dialog";
 
 export default function AdminLayout({
   children,
@@ -42,7 +44,31 @@ export default function AdminLayout({
   const [menuManagementOpen, setMenuManagementOpen] = useState(true);
   const [eventsManagementOpen, setEventsManagementOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
+  const meQuery = authHooks.useMe({ enabled: pathname !== "/admin/login" && pathname !== "/login" });
+  const userName =
+    meQuery.data?.name ||
+    [meQuery.data?.firstName, meQuery.data?.lastName].filter(Boolean).join(" ") ||
+    meQuery.data?.email ||
+    "Account";
+
+  useEffect(() => {
+    if (pathname === "/admin/login" || pathname === "/login") return;
+    if (meQuery.isError) void logout();
+    if (meQuery.data && meQuery.data.role !== "admin") void logout();
+  }, [pathname, meQuery.isError, meQuery.data]);
+
+  const handleLogoutConfirm = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+      setLogoutDialogOpen(false);
+    }
+  };
 
   // Handle mobile detection and sidebar state
   useEffect(() => {
@@ -258,7 +284,7 @@ export default function AdminLayout({
                   {isMobile ? (
                     <Menu className="h-5 w-5 text-text-primary" />
                   ) : sidebarOpen ? (
-                    <X className="h-5 w-5 text-text-primary" />
+                    <ChevronLeft className="h-5 w-5 text-text-primary" />
                   ) : (
                     <Menu className="h-5 w-5 text-text-primary" />
                   )}
@@ -270,15 +296,13 @@ export default function AdminLayout({
               <div className="flex items-center gap-2 md:gap-4">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-background-alt transition-colors text-text-secondary hover:text-text-primary">
+                    <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-background-alt transition-colors text-text-secondary hover:text-text-primary focus:outline-none focus:ring-0 focus:ring-offset-0">
                       <User className="h-5 w-5" />
-                      <span className="hidden md:inline">Account</span>
+                      <span className="hidden md:inline">{userName}</span>
                       <ChevronDown className="h-4 w-4 hidden md:inline" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <Link href="/admin/settings" className="flex items-center gap-2">
                         <Settings className="h-4 w-4" />
@@ -295,7 +319,7 @@ export default function AdminLayout({
                     <DropdownMenuItem
                       variant="destructive"
                       className="cursor-pointer"
-                      onClick={logout}
+                      onClick={() => setLogoutDialogOpen(true)}
                     >
                       <LogOut className="h-4 w-4" />
                       <span>Log out</span>
@@ -312,6 +336,16 @@ export default function AdminLayout({
           </main>
         </div>
       </div>
+
+      <LogoutConfirmationDialog
+        open={logoutDialogOpen}
+        onOpenChange={(open) => {
+          if (isLoggingOut) return;
+          setLogoutDialogOpen(open);
+        }}
+        onConfirm={handleLogoutConfirm}
+        isLoading={isLoggingOut}
+      />
     </div>
   );
 }
