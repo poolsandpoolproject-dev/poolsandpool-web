@@ -310,7 +310,7 @@ export default function HomePage() {
         </Container>
       </section>
 
-      <section className="relative overflow-hidden max-h-[320px]">
+      <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/footer.png")' }} />
         <div className="absolute inset-0 bg-[#071b2f]/70" />
 
@@ -321,17 +321,16 @@ export default function HomePage() {
             whileInView="show"
             viewport={heroViewport}
             transition={{ duration: 0.55, ease: "easeOut" }}
-            className="mx-auto overflow-hidden border-white/15 bg-white/5"
+            className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-white/15 bg-white/5"
           >
-            <div className="relative aspect-video w-full">
-              <iframe
-                title="Pools & Pool location"
-                className="absolute inset-0 h-full w-full"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.8122478285086!2d3.2627492108925615!3d6.6701723932970465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b975c6616c2ad%3A0xd2332136489f232b!2s1%20Wuraola%20St%2C%20Alagbado%2C%20Lagos%20100271%2C%20Lagos!5e0!3m2!1sen!2sng!4v1770471518423!5m2!1sen!2sng"
-              />
-            </div>
+            <iframe
+              title="Pools & Pool location"
+              className="h-[320px] w-full md:h-[420px] lg:h-[480px]"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.8122478285086!2d3.2627492108925615!3d6.6701723932970465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b975c6616c2ad%3A0xd2332136489f232b!2s1%20Wuraola%20St%2C%20Alagbado%2C%20Lagos%20100271%2C%20Lagos!5e0!3m2!1sen!2sng!4v1770471518423!5m2!1sen!2sng"
+            />
           </motion.div>
         </div>
       </section>
