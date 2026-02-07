@@ -132,8 +132,8 @@
   --color-info: #1E88E5;
 
   /* Typography */
-  --font-serif: 'Playfair Display', serif;
-  --font-sans: 'Inter', 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-zalora-display), ui-serif, serif;
+  --font-sans: var(--font-zalora), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono, monospace);
 
   /* Font Sizes */
@@ -223,7 +223,7 @@
 body {
   background: var(--color-background);
   color: var(--color-text-primary);
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
   font-size: var(--font-size-base);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;

@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { login, isAuthenticated } from "@/lib/auth";
+import { PasswordInput } from "@/components/ui/password-input";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
@@ -43,8 +44,13 @@ function LoginForm() {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-background-alt w-full h-full overflow-auto">
-      <div className="bg-white border border-border rounded-lg p-8 w-full max-w-[500px] shadow-lg mx-4 my-8">
+    <div className="fixed inset-0 w-full h-full overflow-auto">
+      <div
+        className="min-h-full flex items-center justify-center bg-center bg-cover"
+        style={{ backgroundImage: "url(/bar.jpg)" }}
+      >
+        <div className="fixed inset-0 bg-black/55" />
+        <div className="relative bg-white/95 backdrop-blur border border-border rounded-lg p-8 w-full max-w-[500px] shadow-lg mx-4 my-8">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
@@ -89,12 +95,11 @@ function LoginForm() {
             >
               Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 text-black border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="h-auto px-4 py-2 text-black rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-transparent"
               placeholder="••••••••"
               required
             />
@@ -117,15 +122,8 @@ function LoginForm() {
               </>
             )}
           </button>
-
-          <div className="text-center text-xs text-text-secondary mt-4 pt-4 border-t border-border">
-            <p>Demo Credentials:</p>
-            <p className="font-mono text-xs mt-1">
-              Email: admin@poolsandpool.com
-            </p>
-            <p className="font-mono text-xs">Password: admin123</p>
-          </div>
         </form>
+      </div>
       </div>
     </div>
   );

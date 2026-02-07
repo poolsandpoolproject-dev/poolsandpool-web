@@ -20,6 +20,9 @@ export interface DeleteConfirmationDialogProps {
   description?: string;
   itemName?: string;
   isLoading?: boolean;
+  confirmText?: string;
+  confirmLoadingText?: string;
+  confirmVariant?: React.ComponentProps<typeof Button>["variant"];
 }
 
 export function DeleteConfirmationDialog({
@@ -30,6 +33,9 @@ export function DeleteConfirmationDialog({
   description,
   itemName,
   isLoading = false,
+  confirmText = "Delete",
+  confirmLoadingText = "Deleting...",
+  confirmVariant = "destructive",
 }: DeleteConfirmationDialogProps) {
   const handleConfirm = () => {
     onConfirm();
@@ -55,7 +61,7 @@ export function DeleteConfirmationDialog({
             </div>
           </div>
         </DialogHeader>
-        <DialogFooter>
+        <DialogFooter className="mt-4">
           <Button
             type="button"
             variant="outline"
@@ -67,11 +73,11 @@ export function DeleteConfirmationDialog({
           </Button>
           <Button
             type="button"
-            variant="destructive"
+            variant={confirmVariant}
             onClick={handleConfirm}
             disabled={isLoading}
           >
-            {isLoading ? "Deleting..." : "Delete"}
+            {isLoading ? confirmLoadingText : confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>
