@@ -8,22 +8,6 @@ interface CategoryPageProps {
   params: Promise<{ categorySlug: string }>;
 }
 
-export async function generateMetadata({ params }: CategoryPageProps) {
-  const { categorySlug } = await params;
-  const category = getCategoryBySlug(categorySlug);
-
-  if (!category) {
-    return {
-      title: "Category Not Found",
-    };
-  }
-
-  return {
-    title: `${category.name} Menu - Pools & Pool`,
-    description: `Browse our ${category.name.toLowerCase()} menu at Pools & Pool`,
-  };
-}
-
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { categorySlug } = await params;
 

@@ -201,7 +201,7 @@ export default function SectionsPage() {
       setSectionToDelete(null);
       setDeleteError(null);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 409) {
+      if (error instanceof ApiError && error.message) {
         setDeleteError(error.message);
       } else {
         setDeleteError("Something went wrong. Please try again.");
@@ -620,12 +620,12 @@ export default function SectionsPage() {
         onConfirm={handleDeleteConfirm}
         title="Delete Section"
         description={
-          deleteError ??
-          (sectionToDelete
+          sectionToDelete
             ? `Are you sure you want to delete "${sectionToDelete.name}"? This action cannot be undone.`
-            : undefined)
+            : undefined
         }
-        itemName={deleteError ? undefined : sectionToDelete?.name}
+        itemName={sectionToDelete?.name}
+        errorMessage={deleteError}
         isLoading={deleteSectionMutation.isPending}
         confirmText="Delete"
         confirmLoadingText="Deleting..."

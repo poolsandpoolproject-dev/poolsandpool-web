@@ -2,6 +2,28 @@ import Image from "next/image";
 import Link from "next/link";
 import { getEnabledCategories, getSectionsByCategoryId } from "@/lib/data";
 
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://poolsandpool.co";
+
+export const metadata = {
+  title: "Our Menu",
+  description:
+    "Discover our selection of premium food, drinks, and more at Pools & Pool. Browse categories and explore our full menu.",
+  alternates: { canonical: `${baseUrl}/menu` },
+  openGraph: {
+    title: "Our Menu | Pools & Pool",
+    description:
+      "Discover our selection of premium food, drinks, and more at Pools & Pool.",
+    url: `${baseUrl}/menu`,
+    type: "website" as const,
+  },
+  twitter: {
+    card: "summary_large_image" as const,
+    title: "Our Menu | Pools & Pool",
+    description:
+      "Discover our selection of premium food, drinks, and more at Pools & Pool.",
+  },
+};
+
 export default function MenuPage() {
   const categories = getEnabledCategories();
 

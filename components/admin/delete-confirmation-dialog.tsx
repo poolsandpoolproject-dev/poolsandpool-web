@@ -19,6 +19,7 @@ export interface DeleteConfirmationDialogProps {
   title?: string;
   description?: string;
   itemName?: string;
+  errorMessage?: string | null;
   isLoading?: boolean;
   confirmText?: string;
   confirmLoadingText?: string;
@@ -32,6 +33,7 @@ export function DeleteConfirmationDialog({
   title = "Delete Item",
   description,
   itemName,
+  errorMessage,
   isLoading = false,
   confirmText = "Delete",
   confirmLoadingText = "Deleting...",
@@ -53,11 +55,16 @@ export function DeleteConfirmationDialog({
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-destructive/10">
               <AlertTriangle className="h-5 w-5 text-destructive" />
             </div>
-            <div>
+            <div className="flex-1 space-y-2">
               <DialogTitle className="text-text-primary">{title}</DialogTitle>
-              <DialogDescription className="text-text-secondary mt-4">
+              <DialogDescription className="text-text-secondary">
                 {description || defaultDescription}
               </DialogDescription>
+              {errorMessage && (
+                <p className="text-sm text-destructive font-medium" role="alert">
+                  {errorMessage}
+                </p>
+              )}
             </div>
           </div>
         </DialogHeader>

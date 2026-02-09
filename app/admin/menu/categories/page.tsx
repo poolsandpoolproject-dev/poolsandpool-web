@@ -183,7 +183,7 @@ export default function CategoriesPage() {
       setCategoryToDelete(null);
       setDeleteError(null);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 409) {
+      if (error instanceof ApiError && error.message) {
         setDeleteError(error.message);
       } else {
         setDeleteError("Something went wrong. Please try again.");
@@ -583,12 +583,12 @@ export default function CategoriesPage() {
         onConfirm={handleDeleteConfirm}
         title="Delete Category"
         description={
-          deleteError ??
-          (categoryToDelete
+          categoryToDelete
             ? `Are you sure you want to delete "${categoryToDelete.name}"? Sections in this category will be removed. This action cannot be undone.`
-            : undefined)
+            : undefined
         }
-        itemName={deleteError ? undefined : categoryToDelete?.name}
+        itemName={categoryToDelete?.name}
+        errorMessage={deleteError}
         isLoading={deleteCategoryMutation.isPending}
         confirmText="Delete"
         confirmLoadingText="Deleting..."

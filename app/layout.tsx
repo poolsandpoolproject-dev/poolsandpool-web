@@ -38,7 +38,7 @@ export const metadata: Metadata = {
       "Digital menu for Pools & Pool Luxurious Lounge & Bar. Browse our menu of food, drinks, and more.",
     images: [
       {
-        url: "/graph.png",
+        url: `${siteUrl}/graph.png`,
         width: 1200,
         height: 630,
         alt: "Pools & Pool - Luxurious Lounge & Bar",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     title: "Pools & Pool - Luxurious Lounge & Bar",
     description:
       "Digital menu for Pools & Pool Luxurious Lounge & Bar. Browse our menu of food, drinks, and more.",
-    images: ["/graph.png"],
+    images: [`${siteUrl}/graph.png`],
   },
   robots: {
     index: true,
