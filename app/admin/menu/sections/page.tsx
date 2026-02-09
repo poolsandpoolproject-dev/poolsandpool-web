@@ -25,8 +25,7 @@ import {
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { Pagination } from "@/components/admin/pagination";
 import { DeleteConfirmationDialog } from "@/components/admin/delete-confirmation-dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { adminHooks, type Section } from "@/lib/api";
+import { adminHooks, ApiError, type Section } from "@/lib/api";
 import { ImageDropzone } from "@/components/ui/image-dropzone";
 import { useForm } from "react-hook-form";
 
@@ -38,6 +37,9 @@ export default function SectionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [toggleDialogOpen, setToggleDialogOpen] = useState(false);
   const [toggleTarget, setToggleTarget] = useState<{ id: string; name: string; nextEnabled: boolean } | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const perPage = 20;
 
@@ -64,6 +66,7 @@ export default function SectionsPage() {
   const updateSectionMutation = adminHooks.useUpdateSection();
   const setSectionEnabledMutation = adminHooks.useSetSectionEnabled();
   const reorderSectionsMutation = adminHooks.useReorderSections();
+  const deleteSectionMutation = adminHooks.useDeleteSection();
 
   const {
     register,
@@ -181,6 +184,28 @@ export default function SectionsPage() {
       setToggleTarget(null);
     } catch (error) {
       console.error("Error toggling section:", error);
+    }
+  };
+
+  const handleDeleteClick = (section: Section) => {
+    setSectionToDelete(section);
+    setDeleteError(null);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!sectionToDelete) return;
+    try {
+      await deleteSectionMutation.mutateAsync(sectionToDelete.id);
+      setDeleteDialogOpen(false);
+      setSectionToDelete(null);
+      setDeleteError(null);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setDeleteError(error.message);
+      } else {
+        setDeleteError("Something went wrong. Please try again.");
+      }
     }
   };
 
@@ -338,23 +363,18 @@ export default function SectionsPage() {
             >
               <Edit2 className="h-4 w-4" />
             </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled
-                    className="h-8 w-8 text-text-secondary/60 cursor-not-allowed"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent sideOffset={8}>
-                Coming soon
-              </TooltipContent>
-            </Tooltip>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteClick(section);
+              }}
+              className="h-8 w-8 text-text-secondary hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+              title="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         ),
       },
@@ -362,6 +382,7 @@ export default function SectionsPage() {
     [
       canReorderSections,
       getCategoryName,
+      handleDeleteClick,
       handleMoveSection,
       handleOpenModal,
       handleToggleEnabled,
@@ -584,6 +605,30 @@ export default function SectionsPage() {
         confirmLoadingText={toggleTarget?.nextEnabled ? "Enabling..." : "Disabling..."}
         confirmVariant={toggleTarget?.nextEnabled ? "default" : "destructive"}
         isLoading={setSectionEnabledMutation.isPending}
+      />
+
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (deleteSectionMutation.isPending) return;
+          setDeleteDialogOpen(open);
+          if (!open) {
+            setSectionToDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Section"
+        description={
+          deleteError ??
+          (sectionToDelete
+            ? `Are you sure you want to delete "${sectionToDelete.name}"? This action cannot be undone.`
+            : undefined)
+        }
+        itemName={deleteError ? undefined : sectionToDelete?.name}
+        isLoading={deleteSectionMutation.isPending}
+        confirmText="Delete"
+        confirmLoadingText="Deleting..."
       />
     </div>
   );

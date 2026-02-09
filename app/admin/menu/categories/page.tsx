@@ -18,9 +18,8 @@ import { Label } from "@/components/ui/label";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { Pagination } from "@/components/admin/pagination";
 import { DeleteConfirmationDialog } from "@/components/admin/delete-confirmation-dialog";
-import { adminHooks, type Category } from "@/lib/api";
+import { adminHooks, ApiError, type Category } from "@/lib/api";
 import { ImageDropzone } from "@/components/ui/image-dropzone";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useForm } from "react-hook-form";
 
 export default function CategoriesPage() {
@@ -32,6 +31,9 @@ export default function CategoriesPage() {
   const [toggleTarget, setToggleTarget] = useState<{ id: string; name: string; nextEnabled: boolean } | null>(
     null
   );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 20;
@@ -42,6 +44,7 @@ export default function CategoriesPage() {
   const updateCategoryMutation = adminHooks.useUpdateCategory();
   const setCategoryEnabledMutation = adminHooks.useSetCategoryEnabled();
   const reorderCategoriesMutation = adminHooks.useReorderCategories();
+  const deleteCategoryMutation = adminHooks.useDeleteCategory();
 
   const categories = categoriesQuery.data?.data ?? [];
   const meta = categoriesQuery.data?.meta;
@@ -163,6 +166,28 @@ export default function CategoriesPage() {
       setToggleTarget(null);
     } catch (error) {
       console.error("Error toggling category:", error);
+    }
+  };
+
+  const handleDeleteClick = (category: Category) => {
+    setCategoryToDelete(category);
+    setDeleteError(null);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!categoryToDelete) return;
+    try {
+      await deleteCategoryMutation.mutateAsync(categoryToDelete.id);
+      setDeleteDialogOpen(false);
+      setCategoryToDelete(null);
+      setDeleteError(null);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setDeleteError(error.message);
+      } else {
+        setDeleteError("Something went wrong. Please try again.");
+      }
     }
   };
 
@@ -303,27 +328,22 @@ export default function CategoriesPage() {
           >
             <Edit2 className="h-4 w-4" />
           </Button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  disabled
-                  className="h-8 w-8 text-text-secondary/60 cursor-not-allowed"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent sideOffset={8}>
-              Coming soon
-            </TooltipContent>
-          </Tooltip>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteClick(category);
+            }}
+            className="h-8 w-8 text-text-secondary hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       ),
     },
-  ], [categoryIds, handleMoveCategory, handleOpenModal, handleToggleEnabled, reorderCategoriesMutation.isPending]);
+  ], [categoryIds, handleDeleteClick, handleMoveCategory, handleOpenModal, handleToggleEnabled, reorderCategoriesMutation.isPending]);
 
   return (
     <div className="space-y-6">
@@ -550,6 +570,29 @@ export default function CategoriesPage() {
         isLoading={setCategoryEnabledMutation.isPending}
       />
 
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (deleteCategoryMutation.isPending) return;
+          setDeleteDialogOpen(open);
+          if (!open) {
+            setCategoryToDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Category"
+        description={
+          deleteError ??
+          (categoryToDelete
+            ? `Are you sure you want to delete "${categoryToDelete.name}"? Sections in this category will be removed. This action cannot be undone.`
+            : undefined)
+        }
+        itemName={deleteError ? undefined : categoryToDelete?.name}
+        isLoading={deleteCategoryMutation.isPending}
+        confirmText="Delete"
+        confirmLoadingText="Deleting..."
+      />
     </div>
   );
 }

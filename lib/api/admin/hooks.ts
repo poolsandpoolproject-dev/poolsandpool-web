@@ -71,6 +71,14 @@ export function useReorderCategories() {
   });
 }
 
+export function useDeleteCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => menuApi.deleteCategory(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "categories"] }),
+  });
+}
+
 export function useSections(params?: menuApi.ListSectionsParams) {
   return useQuery({
     queryKey: queryKeys.sections(params),
@@ -112,6 +120,14 @@ export function useReorderSections() {
   return useMutation({
     mutationFn: (vars: { categoryId: string; sectionIds: string[] }) =>
       menuApi.reorderSections(vars.categoryId, vars.sectionIds),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "sections"] }),
+  });
+}
+
+export function useDeleteSection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => menuApi.deleteSection(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "sections"] }),
   });
 }

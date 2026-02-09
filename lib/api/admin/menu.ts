@@ -102,6 +102,14 @@ export function reorderCategories(categoryIds: string[], signal?: AbortSignal) {
   });
 }
 
+export function deleteCategory(id: string, signal?: AbortSignal) {
+  return apiRequest<{ success: boolean }>(`/admin/categories/${id}`, {
+    method: "DELETE",
+    auth: true,
+    signal,
+  });
+}
+
 export type ListSectionsParams = {
   page?: number;
   perPage?: number;
@@ -190,6 +198,14 @@ export function reorderSections(categoryId: string, sectionIds: string[], signal
     method: "POST",
     auth: true,
     body: { categoryId, sectionIds },
+    signal,
+  });
+}
+
+export function deleteSection(id: string, signal?: AbortSignal) {
+  return apiRequest<{ success: boolean }>(`/admin/sections/${id}`, {
+    method: "DELETE",
+    auth: true,
     signal,
   });
 }
