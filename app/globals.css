@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 /*---break---
@@ -134,6 +135,7 @@
   /* Typography */
   --font-serif: var(--font-zalora-display), ui-serif, serif;
   --font-sans: var(--font-zalora), system-ui, -apple-system, sans-serif;
+  --font-jost: "Jost";
   --font-jost-sans: var(--font-jost), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono, monospace);
 

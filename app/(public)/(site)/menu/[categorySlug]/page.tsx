@@ -1,7 +1,8 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getCategoryBySlug, getSectionsByCategoryId, getMenuItemsByCategoryId } from "@/lib/data";
+import { CategoryHero } from "@/components/public/category-hero";
+import { SectionLinks } from "@/components/public/section-links";
+import { Container } from "@/components/ui/container";
 
 interface CategoryPageProps {
   params: Promise<{ categorySlug: string }>;
@@ -39,29 +40,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   const uncategorizedItems = menuItems.filter((item) => !sections.some((s) => s.id === item.sectionId));
 
-  const MenuItemCard = ({ item }: { item: (typeof menuItems)[number] }) => {
+  const MenuItemRow = ({ item }: { item: (typeof menuItems)[number] }) => {
     return (
-      <div className="p-4 bg-white border border-border rounded-lg hover:shadow-md transition-shadow">
-        <div className="flex gap-4">
-          <div className="h-16 w-16 rounded-lg border border-border bg-background-alt overflow-hidden shrink-0 relative">
-            {item.imageUrl ? (
-              <Image src={item.imageUrl} alt={item.name} fill sizes="64px" className="object-cover" unoptimized />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center text-xs text-text-secondary">No image</div>
-            )}
-          </div>
-
-          <div className="flex-1">
-            <div className="flex justify-between items-start mb-2 gap-3">
-              <h3 className="font-semibold text-text-primary">{item.name}</h3>
-              <div className="text-right">
-                <p className="text-lg font-bold text-primary">₦{item.currentPrice.toLocaleString()}</p>
-                {item.temporaryPrice && (
-                  <span className="text-xs bg-secondary text-white px-2 py-1 rounded">{item.temporaryPrice.ruleName}</span>
-                )}
-              </div>
-            </div>
-            {item.description && <p className="text-sm text-text-secondary italic">{item.description}</p>}
+      <div className="border-b border-white/10 pb-5 ">
+        <div className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-2">
+          {item.description ? (
+            <div className="col-span-2 text-sm text-white italic">{item.description}</div>
+          ) : null}
+          <div className="min-w-0 text-white font-bold tracking-wide uppercase text-base">{item.name}</div>
+          <div className="shrink-0 text-right text-white text-base">
+            {item.currentPrice.toLocaleString()} <span className="text-white">₦</span>
           </div>
         </div>
       </div>
@@ -69,47 +57,88 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   };
 
   return (
-    <div className="space-y-8">
-      <div>
-        <Link href="/menu" className="text-sm text-primary hover:text-secondary mb-4 inline-block">
-          ← Back to Menu
-        </Link>
-        <h1 className="font-serif text-4xl font-bold text-primary mb-2">{category.name}</h1>
-        <p className="text-text-secondary">
-          {category.description ? category.description : `Browse our ${category.name.toLowerCase()} selection`}
-        </p>
-      </div>
+    <div className="">
+      <CategoryHero title={`${category.name} Menu`} imageUrl={category.imageUrl} />
+
+      <SectionLinks title={`${category.name} Menu`} sections={sections.map((s) => ({ id: s.id, name: s.name }))} />
 
       {sections.length === 0 && menuItems.length === 0 ? (
         <div className="text-center py-12 text-text-secondary">
           <p>No menu items available in this category yet.</p>
         </div>
       ) : (
-        <div className="space-y-12">
+        <div className="">
           {sections.map((section) => {
             const items = itemsBySection[section.id] || [];
             if (items.length === 0) return null;
 
             return (
-              <div key={section.id} className="space-y-4">
-                <h2 className="text-2xl font-semibold text-text-primary border-b border-border pb-2">{section.name}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {items.map((item) => (
-                    <MenuItemCard key={item.id} item={item} />
-                  ))}
-                </div>
+              <div
+                key={section.id}
+                id={`section-${section.id}`}
+                className="relative overflow-hidden scroll-mt-24 py-12 xl:py-16"
+              >
+                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/pattern.png")' }} />
+                <div className="absolute inset-0 bg-black/55" />
+
+                <Container className="relative z-10">
+                  <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/30 backdrop-blur-sm">
+                    <div className="relative overflow-hidden">
+                      <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{
+                          backgroundImage: `url("${
+                            section.imageUrl && section.imageUrl.trim().length > 0 ? section.imageUrl : "/items.png"
+                          }")`,
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/50" />
+                      <div className="relative z-10 px-6 py-10 sm:px-10">
+                        <h2 className="text-4xl sm:text-5xl font-semibold text-white font-serif tracking-wide">
+                          {section.name}
+                        </h2>
+                      </div>
+                    </div>
+
+                    <div className="px-6 py-6 sm:px-10 sm:py-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                        {items.map((item) => (
+                          <MenuItemRow key={item.id} item={item} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </Container>
               </div>
             );
           })}
 
           {uncategorizedItems.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-semibold text-text-primary border-b border-border pb-2">Other Items</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {uncategorizedItems.map((item) => (
-                  <MenuItemCard key={item.id} item={item} />
-                ))}
-              </div>
+            <div className="relative overflow-hidden py-12 xl:py-16">
+              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/pattern.png")' }} />
+              <div className="absolute inset-0 bg-black/55" />
+
+              <Container className="relative z-10">
+                <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/30 backdrop-blur-sm">
+                  <div className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/items.png")' }} />
+                    <div className="absolute inset-0 bg-black/55" />
+                    <div className="relative z-10 px-6 py-10 sm:px-10">
+                      <h2 className="text-4xl sm:text-5xl font-semibold text-white font-serif tracking-wide">
+                        Other Items
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="px-6 py-6 sm:px-10 sm:py-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                      {uncategorizedItems.map((item) => (
+                        <MenuItemRow key={item.id} item={item} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </Container>
             </div>
           )}
         </div>

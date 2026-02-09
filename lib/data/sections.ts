@@ -21,7 +21,7 @@ let sectionsStore: Section[] = [
     slug: "small-chops",
     categoryId: "1",
     description: "Finger foods and light bites",
-    imageUrl: "/images/sections/small-chops.jpg",
+    imageUrl: "",
     enabled: true,
   },
   {
@@ -30,7 +30,7 @@ let sectionsStore: Section[] = [
     slug: "grills-bbq",
     categoryId: "1",
     description: "Grilled meats and BBQ platters",
-    imageUrl: "/images/sections/grills-bbq.jpg",
+    imageUrl: "",
     enabled: true,
   },
   {
@@ -39,7 +39,7 @@ let sectionsStore: Section[] = [
     slug: "main-dishes",
     categoryId: "1",
     description: "Hearty mains for full meals",
-    imageUrl: "/images/sections/main-dishes.jpg",
+    imageUrl: "/main.jpg",
     enabled: true,
   },
   {
@@ -48,7 +48,7 @@ let sectionsStore: Section[] = [
     slug: "sides",
     categoryId: "1",
     description: "Sides to complement your meal",
-    imageUrl: "/images/sections/sides.jpg",
+    imageUrl: "",
     enabled: true,
   },
   {
@@ -57,7 +57,7 @@ let sectionsStore: Section[] = [
     slug: "platters",
     categoryId: "1",
     description: "Sharing platters for groups",
-    imageUrl: "/images/sections/platters.jpg",
+    imageUrl: "",
     enabled: true,
   },
   {
