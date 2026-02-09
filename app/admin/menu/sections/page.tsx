@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { Plus, Edit2, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -25,87 +25,91 @@ import {
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { Pagination } from "@/components/admin/pagination";
 import { DeleteConfirmationDialog } from "@/components/admin/delete-confirmation-dialog";
-import {
-  getAllSections,
-  createSection,
-  updateSection,
-  deleteSection,
-  toggleSectionEnabled,
-  type Section,
-} from "@/lib/data/sections";
-import {
-  getAllCategories,
-  type Category,
-} from "@/lib/data/categories";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { adminHooks, type Section } from "@/lib/api";
+import { ImageDropzone } from "@/components/ui/image-dropzone";
+import { useForm } from "react-hook-form";
 
 export default function SectionsPage() {
-  const [sections, setSections] = useState<Section[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    imageUrl: "",
-    categoryId: "",
-    enabled: true,
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10; // Fixed page size
-  const [isLoading, setIsLoading] = useState(true);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [toggleDialogOpen, setToggleDialogOpen] = useState(false);
+  const [toggleTarget, setToggleTarget] = useState<{ id: string; name: string; nextEnabled: boolean } | null>(null);
 
-  // Load sections and categories
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      // Simulate API call delay (2 seconds)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      loadCategories();
-      loadSections();
-      setIsLoading(false);
-    };
-    loadData();
-  }, []);
+  const perPage = 20;
 
-  const loadCategories = () => {
-    setCategories(getAllCategories());
-  };
+  const categoriesQuery = adminHooks.useCategories({ page: 1, perPage: 200 });
+  const categories = categoriesQuery.data?.data ?? [];
 
-  const loadSections = () => {
-    setSections(getAllSections());
-  };
+  const sectionsParams = useMemo(
+    () => ({
+      page: currentPage,
+      perPage,
+      categoryId: selectedCategoryId === "all" ? undefined : selectedCategoryId,
+      includeDisabled: true,
+    }),
+    [currentPage, perPage, selectedCategoryId]
+  );
 
-  // Filter sections by selected category
-  const filteredSections = useMemo(() => {
-    if (selectedCategoryId === "all") {
-      return sections;
-    }
-    return sections.filter((section) => section.categoryId === selectedCategoryId);
-  }, [sections, selectedCategoryId]);
+  const sectionsQuery = adminHooks.useSections(sectionsParams);
+  const sections = sectionsQuery.data?.data ?? [];
+  const meta = sectionsQuery.data?.meta;
+  const totalPages = meta?.lastPage ?? 1;
+  const totalItems = meta?.total ?? sections.length;
+
+  const createSectionMutation = adminHooks.useCreateSection();
+  const updateSectionMutation = adminHooks.useUpdateSection();
+  const setSectionEnabledMutation = adminHooks.useSetSectionEnabled();
+  const reorderSectionsMutation = adminHooks.useReorderSections();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { dirtyFields },
+  } = useForm<{
+    name: string;
+    description: string;
+    categoryId: string;
+    enabled: boolean;
+    image: File | null;
+  }>({
+    defaultValues: { name: "", description: "", categoryId: "", enabled: true, image: null },
+  });
+
+  const image = watch("image");
+  const categoryId = watch("categoryId");
+
+  const nextSectionOrder = useMemo(() => {
+    if (sections.length === 0) return 0;
+    return Math.max(0, ...sections.map((s) => (s.order ?? 0))) + 1;
+  }, [sections]);
 
   const handleOpenModal = (section?: Section) => {
     if (section) {
       setEditingSection(section);
-      setFormData({
+      setExistingImageUrl(section.imageUrl || null);
+      reset({
         name: section.name,
         description: section.description || "",
-        imageUrl: section.imageUrl || "",
         categoryId: section.categoryId,
         enabled: section.enabled,
+        image: null,
       });
     } else {
       setEditingSection(null);
-      setFormData({
+      setExistingImageUrl(null);
+      reset({
         name: "",
         description: "",
-        imageUrl: "",
-        categoryId: selectedCategoryId !== "all" ? selectedCategoryId : categories[0]?.id || "",
+        categoryId: selectedCategoryId !== "all" ? selectedCategoryId : categories[0]?.id ?? "",
         enabled: true,
+        image: null,
       });
     }
     setIsModalOpen(true);
@@ -114,344 +118,425 @@ export default function SectionsPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingSection(null);
-    setFormData({
-      name: "",
-      description: "",
-      imageUrl: "",
-      categoryId: "",
-      enabled: true,
-    });
+    setExistingImageUrl(null);
+    reset({ name: "", description: "", categoryId: "", enabled: true, image: null });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
+  const onSubmit = async (values: {
+    name: string;
+    description: string;
+    categoryId: string;
+    enabled: boolean;
+    image: File | null;
+  }) => {
     try {
+      const nextImage = values.image ?? undefined;
+
       if (editingSection) {
-        // Update existing section
-        updateSection(editingSection.id, {
-          name: formData.name,
-          description: formData.description || undefined,
-          imageUrl: formData.imageUrl || undefined,
-          categoryId: formData.categoryId,
-          enabled: formData.enabled,
+        const body: Parameters<typeof updateSectionMutation.mutateAsync>[0]["body"] = {};
+        if (dirtyFields.name) body.name = values.name;
+        if (dirtyFields.description) body.description = values.description;
+        if (dirtyFields.categoryId) body.categoryId = values.categoryId;
+        if (dirtyFields.enabled) body.enabled = values.enabled;
+        if (nextImage) body.image = nextImage;
+
+        if (Object.keys(body).length === 0) {
+          handleCloseModal();
+          return;
+        }
+
+        await updateSectionMutation.mutateAsync({
+          id: editingSection.id,
+          body,
         });
       } else {
-        // Create new section
-        createSection(
-          formData.name,
-          formData.categoryId,
-          formData.enabled,
-          formData.description || undefined,
-          formData.imageUrl || undefined
-        );
+        await createSectionMutation.mutateAsync({
+          name: values.name,
+          categoryId: values.categoryId,
+          description: values.description || undefined,
+          enabled: values.enabled,
+          image: nextImage,
+          order: nextSectionOrder,
+        });
       }
-      loadSections();
       handleCloseModal();
     } catch (error) {
       console.error("Error saving section:", error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const handleDeleteClick = (section: Section) => {
-    setSectionToDelete(section);
-    setDeleteDialogOpen(true);
+  const handleToggleEnabled = (section: Section) => {
+    setToggleTarget({ id: section.id, name: section.name, nextEnabled: !section.enabled });
+    setToggleDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!sectionToDelete) return;
-
-    setIsDeleting(true);
+  const handleToggleConfirm = async () => {
+    if (!toggleTarget) return;
     try {
-      deleteSection(sectionToDelete.id);
-      loadSections();
-      setDeleteDialogOpen(false);
-      setSectionToDelete(null);
+      await setSectionEnabledMutation.mutateAsync({
+        id: toggleTarget.id,
+        enabled: toggleTarget.nextEnabled,
+      });
+      setToggleDialogOpen(false);
+      setToggleTarget(null);
     } catch (error) {
-      console.error("Error deleting section:", error);
-    } finally {
-      setIsDeleting(false);
+      console.error("Error toggling section:", error);
     }
   };
 
-  const handleToggleEnabled = (id: string) => {
-    toggleSectionEnabled(id);
-    loadSections();
-  };
+  const getCategoryName = useCallback(
+    (id: string) => categories.find((c) => c.id === id)?.name ?? "—",
+    [categories]
+  );
 
-  // Pagination logic
-  const paginatedSections = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    const end = start + pageSize;
-    return filteredSections.slice(start, end);
-  }, [filteredSections, currentPage, pageSize]);
+  const sectionIds = useMemo(() => sections.map((s) => s.id), [sections]);
+  const canReorderSections = selectedCategoryId !== "all";
 
-  const totalPages = Math.ceil(filteredSections.length / pageSize);
+  const handleMoveSection = useCallback(
+    (section: Section, direction: "up" | "down") => {
+      if (!canReorderSections) return;
+      const i = sectionIds.indexOf(section.id);
+      if (i < 0) return;
+      if (direction === "up" && i === 0) return;
+      if (direction === "down" && i === sectionIds.length - 1) return;
+      const next = [...sectionIds];
+      const j = direction === "up" ? i - 1 : i + 1;
+      [next[i], next[j]] = [next[j], next[i]];
+      reorderSectionsMutation.mutate({ categoryId: selectedCategoryId, sectionIds: next });
+    },
+    [canReorderSections, sectionIds, selectedCategoryId, reorderSectionsMutation]
+  );
 
-  // Get category name by ID
-  const getCategoryName = (categoryId: string) => {
-    const category = categories.find((cat) => cat.id === categoryId);
-    return category?.name || "Unknown";
-  };
-
-  // Table columns
-  const columns: Column<Section>[] = useMemo(() => [
-    {
-      key: "image",
-      header: "Section",
-      render: (section) => (
-        <div className="flex items-center gap-3">
-          {section.imageUrl ? (
-            <div className="h-10 w-10 rounded-md overflow-hidden bg-background-alt border border-border shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={section.imageUrl}
-                alt={section.name}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          ) : (
-            <div className="h-10 w-10 rounded-md bg-background-alt border border-dashed border-border flex items-center justify-center text-xs text-text-secondary shrink-0">
-              No image
-            </div>
-          )}
-          <div className="space-y-0.5">
-            <div className="font-semibold text-text-primary">{section.name}</div>
-            {section.description && (
-              <p className="text-xs text-text-secondary line-clamp-1">
-                {section.description}
-              </p>
+  const columns: Column<Section>[] = useMemo(
+    () => [
+      {
+        key: "image",
+        header: "Section",
+        render: (section) => (
+          <div className="flex items-center gap-3">
+            {section.imageUrl ? (
+              <div className="h-10 w-10 rounded-md overflow-hidden bg-background-alt border border-border shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={section.imageUrl}
+                  alt={section.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="h-10 w-10 rounded-md bg-background-alt border border-dashed border-border flex items-center justify-center text-xs text-text-secondary shrink-0">
+                No image
+              </div>
             )}
+            <div className="font-semibold text-text-primary">{section.name}</div>
           </div>
-        </div>
-      ),
-    },
-    {
-      key: "category",
-      header: "Category",
-      render: (section) => (
-        <Badge variant="outline" className="bg-background-alt">
-          {getCategoryName(section.categoryId)}
-        </Badge>
-      ),
-    },
-    {
-      key: "slug",
-      header: "Slug",
-      render: (section) => (
-        <code className="text-xs font-mono text-text-secondary bg-background-alt px-2 py-1 rounded border border-border">
-          {section.slug}
-        </code>
-      ),
-    },
-    {
-      key: "enabled",
-      header: "Status",
-      render: (section) => (
-        <div className="flex items-center gap-3">
-          <Switch
-            checked={section.enabled}
-            onCheckedChange={() => handleToggleEnabled(section.id)}
-            onClick={(e) => e.stopPropagation()}
-          />
-          <Badge
-            variant={section.enabled ? "default" : "outline"}
-            className={
-              section.enabled
-                ? "bg-primary/10 text-primary border-primary/20"
-                : ""
-            }
-          >
-            {section.enabled ? "Enabled" : "Disabled"}
+        ),
+      },
+      {
+        key: "category",
+        header: "Category",
+        render: (section) => (
+          <Badge variant="outline" className="bg-background-alt">
+            {getCategoryName(section.categoryId)}
           </Badge>
-        </div>
-      ),
-    },
-    {
-      key: "actions",
-      header: "Actions",
-      headerClassName: "text-right",
-      className: "text-right",
-      render: (section) => (
-        <div className="flex items-center justify-end gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleOpenModal(section);
-            }}
-            className="h-8 w-8 text-text-secondary hover:bg-primary/10 hover:text-primary cursor-pointer"
-          >
-            <Edit2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteClick(section);
-            }}
-            className="h-8 w-8 text-text-secondary hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ], [categories, handleOpenModal, handleDeleteClick, handleToggleEnabled]);
+        ),
+      },
+      {
+        key: "order",
+        header: "Order",
+        render: (section) => {
+          if (!canReorderSections) {
+            return (
+              <span className="text-text-secondary tabular-nums">
+                {section.order != null ? section.order : "—"}
+              </span>
+            );
+          }
+          const i = sectionIds.indexOf(section.id);
+          const canMoveUp = i > 0;
+          const canMoveDown = i >= 0 && i < sectionIds.length - 1;
+          return (
+            <div className="flex items-center gap-1">
+              <span className="text-text-secondary tabular-nums min-w-[1.5rem]">
+                {section.order != null ? section.order : "—"}
+              </span>
+              <div className="flex flex-col">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-text-secondary hover:text-text-primary disabled:opacity-40"
+                  disabled={!canMoveUp || reorderSectionsMutation.isPending}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveSection(section, "up");
+                  }}
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 -mt-1 text-text-secondary hover:text-text-primary disabled:opacity-40"
+                  disabled={!canMoveDown || reorderSectionsMutation.isPending}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveSection(section, "down");
+                  }}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        key: "slug",
+        header: "Slug",
+        render: (section) => (
+          <code className="text-xs font-mono text-text-secondary bg-background-alt px-2 py-1 rounded border border-border">
+            {section.slug}
+          </code>
+        ),
+      },
+      {
+        key: "enabled",
+        header: "Status",
+        render: (section) => (
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={section.enabled}
+              onCheckedChange={() => handleToggleEnabled(section)}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <Badge
+              variant={section.enabled ? "default" : "outline"}
+              className={section.enabled ? "bg-primary/10 text-primary border-primary/20" : ""}
+            >
+              {section.enabled ? "Enabled" : "Disabled"}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        key: "actions",
+        header: "Actions",
+        headerClassName: "text-right",
+        className: "text-right",
+        render: (section) => (
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenModal(section);
+              }}
+              className="h-8 w-8 text-text-secondary hover:bg-primary/10 hover:text-primary cursor-pointer"
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled
+                    className="h-8 w-8 text-text-secondary/60 cursor-not-allowed"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent sideOffset={8}>
+                Coming soon
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        ),
+      },
+    ],
+    [
+      canReorderSections,
+      getCategoryName,
+      handleMoveSection,
+      handleOpenModal,
+      handleToggleEnabled,
+      reorderSectionsMutation.isPending,
+      sectionIds,
+    ]
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-text-primary">Sections</h1>
           <p className="text-text-secondary mt-1">Manage menu sections</p>
         </div>
-        <Button onClick={() => handleOpenModal()}>
+        <Button onClick={() => handleOpenModal()} className="w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Add Section
         </Button>
       </div>
 
-      {/* Category Filter */}
-      <div className="flex items-center gap-4">
-        <Label htmlFor="category-filter" className="text-text-secondary">
-          Filter by Category:
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <Label htmlFor="category-filter" className="text-text-secondary shrink-0">
+          Filter by category
         </Label>
-        <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-          <SelectTrigger id="category-filter" className="w-48">
-            <SelectValue placeholder="Select category" />
+        <Select
+          value={selectedCategoryId}
+          onValueChange={(v) => {
+            setSelectedCategoryId(v);
+            setCurrentPage(1);
+          }}
+        >
+          <SelectTrigger id="category-filter" className="w-full sm:w-56">
+            <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
+            <SelectItem value="all">All categories</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+        {canReorderSections && (
+          <p className="text-sm text-text-secondary">
+            Order is per category. Use the drag handle or arrows to reorder sections within the selected category.
+          </p>
+        )}
       </div>
 
       <div className="space-y-0">
         <DataTable
-          data={paginatedSections}
+          data={sections}
           columns={columns}
           emptyMessage="No sections found"
           emptyDescription={
             selectedCategoryId === "all"
-              ? "Create your first section to get started."
-              : "No sections found for this category."
+              ? "Create your first section or filter by category."
+              : "No sections in this category."
           }
-          loading={isLoading}
+          loading={sectionsQuery.isLoading}
           loadingRows={5}
+          sortableConfig={
+            canReorderSections
+              ? {
+                  sortableIds: sectionIds,
+                  onReorder: (orderedIds) =>
+                    reorderSectionsMutation.mutate({
+                      categoryId: selectedCategoryId,
+                      sectionIds: orderedIds,
+                    }),
+                  isReordering: reorderSectionsMutation.isPending,
+                }
+              : undefined
+          }
         />
-        {filteredSections.length > 0 && (
+        {totalItems > 0 && (
           <Pagination
-            currentPage={currentPage}
+            currentPage={meta?.currentPage ?? currentPage}
             totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={filteredSections.length}
-            onPageChange={setCurrentPage}
+            pageSize={meta?.perPage ?? perPage}
+            totalItems={totalItems}
+            onPageChange={(page) => setCurrentPage(page)}
             className="rounded-b-lg border-t-0 -mt-px"
           />
         )}
       </div>
 
-      {/* Add/Edit Section Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px]">
           <DialogHeader>
             <DialogTitle className="text-text-primary">
               {editingSection ? "Edit Section" : "Add New Section"}
             </DialogTitle>
             <DialogDescription className="text-text-secondary">
               {editingSection
-                ? "Update the section details below."
-                : "Create a new menu section. The slug will be generated automatically."}
+                ? "Update the section details. Only changed fields are sent."
+                : "Create a new menu section. Slug is generated automatically."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-text-secondary">
-                  Section Name
-                </Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="e.g., Small Chops, Signature Cocktails"
-                  required
-                />
-              </div>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="space-y-5 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-text-secondary">
+                    Section name
+                  </Label>
+                  <Input
+                    id="name"
+                    {...register("name", { required: true })}
+                    placeholder="e.g. Signature Cocktails, Small Chops"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-text-secondary">
+                    Category
+                  </Label>
+                  <Select
+                    value={categoryId}
+                    onValueChange={(v) => setValue("categoryId", v, { shouldDirty: true, shouldTouch: true })}
 
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-text-secondary">
-                  Description (optional)
-                </Label>
-                <Input
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="Short description for this section"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="imageUrl" className="text-text-secondary">
-                  Image URL (optional)
-                </Label>
-                <Input
-                  id="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, imageUrl: e.target.value })
-                  }
-                  placeholder="/images/sections/small-chops.jpg or full URL"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category" className="text-text-secondary">
-                  Category
-                </Label>
-                <Select
-                  value={formData.categoryId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, categoryId: value })
-                  }
-                >
-                  <SelectTrigger id="category">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="enabled"
-                  checked={formData.enabled}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, enabled: checked })
-                  }
-                />
-                <Label htmlFor="enabled" className="cursor-pointer text-text-secondary text-sm">
-                  Enable section
-                </Label>
+                  >
+                    <SelectTrigger id="category" className="w-full">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="description" className="text-text-secondary">
+                    Description (optional)
+                  </Label>
+                  <Input
+                    id="description"
+                    {...register("description")}
+                    placeholder="Short description for this section"
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-2">
+                  <Label className="text-text-secondary">Image (optional)</Label>
+                  <ImageDropzone
+                    value={image}
+                    existingUrl={existingImageUrl}
+                    onRemoveExisting={() => {
+                      setExistingImageUrl(null);
+                      setValue("image", null, { shouldDirty: true, shouldTouch: true });
+                    }}
+                    onChange={(file) =>
+                      setValue("image", file, { shouldDirty: true, shouldTouch: true })
+                    }
+                    disabled={createSectionMutation.isPending || updateSectionMutation.isPending}
+                  />
+                </div>
+                <div className="sm:col-span-2 flex items-center justify-between gap-3 rounded-lg border border-border bg-background-alt/40 px-4 py-3">
+                  <div>
+                    <div className="text-sm font-medium text-text-primary">Enable section</div>
+                    <div className="text-xs text-text-secondary mt-0.5">
+                      Controls visibility on the public menu
+                    </div>
+                  </div>
+                  <Switch
+                    checked={watch("enabled")}
+                    onCheckedChange={(checked) =>
+                      setValue("enabled", checked, { shouldDirty: true, shouldTouch: true })
+                    }
+                  />
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -459,13 +544,16 @@ export default function SectionsPage() {
                 type="button"
                 variant="outline"
                 onClick={handleCloseModal}
-                disabled={isSubmitting}
+                disabled={createSectionMutation.isPending || updateSectionMutation.isPending}
                 className="text-text-secondary"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting
+              <Button
+                type="submit"
+                disabled={createSectionMutation.isPending || updateSectionMutation.isPending}
+              >
+                {createSectionMutation.isPending || updateSectionMutation.isPending
                   ? "Saving..."
                   : editingSection
                     ? "Update Section"
@@ -476,14 +564,26 @@ export default function SectionsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Section"
-        itemName={sectionToDelete?.name}
-        isLoading={isDeleting}
+        open={toggleDialogOpen}
+        onOpenChange={(open) => {
+          if (setSectionEnabledMutation.isPending) return;
+          setToggleDialogOpen(open);
+          if (!open) setToggleTarget(null);
+        }}
+        onConfirm={handleToggleConfirm}
+        title={toggleTarget?.nextEnabled ? "Enable Section" : "Disable Section"}
+        description={
+          toggleTarget
+            ? toggleTarget.nextEnabled
+              ? `Enable "${toggleTarget.name}"? It will appear on the public menu.`
+              : `Disable "${toggleTarget.name}"? It will be hidden from the public menu.`
+            : undefined
+        }
+        confirmText={toggleTarget?.nextEnabled ? "Enable" : "Disable"}
+        confirmLoadingText={toggleTarget?.nextEnabled ? "Enabling..." : "Disabling..."}
+        confirmVariant={toggleTarget?.nextEnabled ? "default" : "destructive"}
+        isLoading={setSectionEnabledMutation.isPending}
       />
     </div>
   );

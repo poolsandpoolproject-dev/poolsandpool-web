@@ -7,8 +7,8 @@ export { authQueryKeys, useLogin, useLogout, useMe } from "../shared/auth-hooks"
 export const queryKeys = {
   categories: (params: menuApi.ListCategoriesParams) => ["admin", "categories", params] as const,
   category: (id: string) => ["admin", "category", id] as const,
-  sections: (params?: { categoryId?: string; includeDisabled?: boolean }) =>
-    ["admin", "sections", params?.categoryId ?? null, params?.includeDisabled ?? true] as const,
+  sections: (params?: menuApi.ListSectionsParams) =>
+    ["admin", "sections", params ?? null] as const,
   menuItems: (params: menuApi.ListMenuItemsParams) => ["admin", "menu-items", params] as const,
   menuItem: (id: string) => ["admin", "menu-item", id] as const,
   temporaryPrices: (menuItemId: string) => ["admin", "menu-item", menuItemId, "temporary-prices"] as const,
@@ -63,10 +63,56 @@ export function useSetCategoryEnabled() {
   });
 }
 
-export function useSections(params?: { categoryId?: string; includeDisabled?: boolean }) {
+export function useReorderCategories() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (categoryIds: string[]) => menuApi.reorderCategories(categoryIds),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "categories"] }),
+  });
+}
+
+export function useSections(params?: menuApi.ListSectionsParams) {
   return useQuery({
     queryKey: queryKeys.sections(params),
     queryFn: ({ signal }) => menuApi.listSections(params, signal),
+  });
+}
+
+export function useCreateSection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: menuApi.CreateSectionInput) => menuApi.createSection(body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "sections"] }),
+  });
+}
+
+export function useUpdateSection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: string; body: menuApi.UpdateSectionInput }) =>
+      menuApi.updateSection(vars.id, vars.body),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["admin", "sections"] });
+      qc.invalidateQueries({ queryKey: ["admin", "section", vars.id] });
+    },
+  });
+}
+
+export function useSetSectionEnabled() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: string; enabled: boolean }) =>
+      menuApi.setSectionEnabled(vars.id, vars.enabled),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "sections"] }),
+  });
+}
+
+export function useReorderSections() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { categoryId: string; sectionIds: string[] }) =>
+      menuApi.reorderSections(vars.categoryId, vars.sectionIds),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "sections"] }),
   });
 }
 

@@ -50,6 +50,7 @@ export type CreateCategoryInput = {
   description?: string;
   enabled?: boolean;
   image?: File;
+  order?: number;
 };
 
 export function createCategory(input: CreateCategoryInput, signal?: AbortSignal) {
@@ -58,13 +59,14 @@ export function createCategory(input: CreateCategoryInput, signal?: AbortSignal)
   if (input.description) fd.set("description", input.description);
   if (typeof input.enabled === "boolean") fd.set("enabled", String(input.enabled));
   if (input.image) fd.set("image", input.image);
+  if (typeof input.order === "number") fd.set("order", String(input.order));
 
   return apiRequest<Category>("/admin/categories", { method: "POST", auth: true, body: fd, signal });
 }
 
 export function updateCategory(
   id: string,
-  body: Partial<Pick<Category, "name" | "description" | "enabled">> & {
+  body: Partial<Pick<Category, "name" | "description" | "enabled" | "order">> & {
     image?: File;
   },
   signal?: AbortSignal
@@ -74,6 +76,7 @@ export function updateCategory(
   if (body.description !== undefined && body.description !== null) fd.set("description", body.description);
   if (body.enabled !== undefined) fd.set("enabled", String(body.enabled));
   if (body.image) fd.set("image", body.image);
+  if (typeof body.order === "number") fd.set("order", String(body.order));
 
   return apiRequest<Category>(`/admin/categories/${id}`, {
     method: "PATCH",
@@ -99,32 +102,78 @@ export function reorderCategories(categoryIds: string[], signal?: AbortSignal) {
   });
 }
 
-export function listSections(params?: { categoryId?: string; includeDisabled?: boolean }, signal?: AbortSignal) {
-  return apiRequest<Section[]>(
+export type ListSectionsParams = {
+  page?: number;
+  perPage?: number;
+  categoryId?: string;
+  search?: string;
+  enabled?: boolean;
+  includeDisabled?: boolean;
+};
+
+export type ListSectionsResponse = { data: Section[]; meta: PaginationMeta };
+
+export function listSections(params?: ListSectionsParams, signal?: AbortSignal) {
+  return apiRequestRaw<ListSectionsResponse>(
     `/admin/sections${qs({
+      page: params?.page,
+      perPage: params?.perPage,
       categoryId: params?.categoryId,
-      includeDisabled: params?.includeDisabled ?? true,
+      search: params?.search,
+      enabled: params?.enabled,
+      includeDisabled: params?.includeDisabled,
     })}`,
     { method: "GET", auth: true, signal }
   );
 }
 
-export function createSection(
-  body: Pick<Section, "categoryId" | "name"> &
-    Partial<Pick<Section, "slug" | "description" | "imageUrl" | "order" | "enabled">>,
-  signal?: AbortSignal
-) {
-  return apiRequest<Section>("/admin/sections", { method: "POST", auth: true, body, signal });
+export function getSection(id: string, signal?: AbortSignal) {
+  return apiRequest<Section>(`/admin/sections/${id}`, { method: "GET", auth: true, signal });
 }
 
-export function updateSection(
-  id: string,
-  body: Partial<
-    Pick<Section, "categoryId" | "name" | "slug" | "description" | "imageUrl" | "order" | "enabled">
-  >,
-  signal?: AbortSignal
-) {
-  return apiRequest<Section>(`/admin/sections/${id}`, { method: "PATCH", auth: true, body, signal });
+export type CreateSectionInput = {
+  name: string;
+  categoryId: string;
+  description?: string;
+  enabled?: boolean;
+  image?: File;
+  order?: number;
+};
+
+export function createSection(input: CreateSectionInput, signal?: AbortSignal) {
+  const fd = new FormData();
+  fd.set("name", input.name);
+  fd.set("categoryId", input.categoryId);
+  if (input.description != null) fd.set("description", input.description);
+  if (typeof input.enabled === "boolean") fd.set("enabled", String(input.enabled));
+  if (input.image) fd.set("image", input.image);
+  if (typeof input.order === "number") fd.set("order", String(input.order));
+  return apiRequest<Section>("/admin/sections", { method: "POST", auth: true, body: fd, signal });
+}
+
+export type UpdateSectionInput = Partial<{
+  name: string;
+  categoryId: string;
+  description: string;
+  enabled: boolean;
+  image: File;
+  order: number;
+}>;
+
+export function updateSection(id: string, body: UpdateSectionInput, signal?: AbortSignal) {
+  const fd = new FormData();
+  if (body.name !== undefined) fd.set("name", body.name);
+  if (body.categoryId !== undefined) fd.set("categoryId", body.categoryId);
+  if (body.description !== undefined) fd.set("description", body.description);
+  if (body.enabled !== undefined) fd.set("enabled", String(body.enabled));
+  if (body.image) fd.set("image", body.image);
+  if (typeof body.order === "number") fd.set("order", String(body.order));
+  return apiRequest<Section>(`/admin/sections/${id}`, {
+    method: "PATCH",
+    auth: true,
+    body: fd,
+    signal,
+  });
 }
 
 export function setSectionEnabled(id: string, enabled: boolean, signal?: AbortSignal) {

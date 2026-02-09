@@ -8,6 +8,9 @@ export type Category = {
   enabled: boolean;
   createdAt?: string;
   updatedAt?: string;
+  sections?: Section[];
+  sectionsCount?: number;
+  sectionNames?: string[];
 };
 
 export type Section = {

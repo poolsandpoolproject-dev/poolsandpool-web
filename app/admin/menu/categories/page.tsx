@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Edit2, Trash2, Eye } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -34,13 +34,14 @@ export default function CategoriesPage() {
   );
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const perPage = 12;
+  const perPage = 20;
 
   const categoriesQuery = adminHooks.useCategories({ page: currentPage, perPage });
   const viewingCategoryQuery = adminHooks.useCategory(viewingCategoryId, { enabled: viewDialogOpen });
   const createCategoryMutation = adminHooks.useCreateCategory();
   const updateCategoryMutation = adminHooks.useUpdateCategory();
   const setCategoryEnabledMutation = adminHooks.useSetCategoryEnabled();
+  const reorderCategoriesMutation = adminHooks.useReorderCategories();
 
   const categories = categoriesQuery.data?.data ?? [];
   const meta = categoriesQuery.data?.meta;
@@ -65,6 +66,12 @@ export default function CategoriesPage() {
 
   const image = watch("image");
 
+  const nextCategoryOrder = useMemo(() => {
+    if (categories.length === 0) return 0;
+    const max = Math.max(0, ...categories.map((c) => (c.order ?? 0)));
+    return max + 1;
+  }, [categories]);
+
   const handleOpenModal = (category?: Category) => {
     if (category) {
       setEditingCategory(category);
@@ -78,7 +85,12 @@ export default function CategoriesPage() {
     } else {
       setEditingCategory(null);
       setExistingImageUrl(null);
-      reset({ name: "", description: "", enabled: true, image: null });
+      reset({
+        name: "",
+        description: "",
+        enabled: true,
+        image: null,
+      });
     }
     setIsModalOpen(true);
   };
@@ -90,7 +102,12 @@ export default function CategoriesPage() {
     reset({ name: "", description: "", enabled: true, image: null });
   };
 
-  const onSubmit = async (values: { name: string; description: string; enabled: boolean; image: File | null }) => {
+  const onSubmit = async (values: {
+    name: string;
+    description: string;
+    enabled: boolean;
+    image: File | null;
+  }) => {
     try {
       const nextImage = values.image ?? undefined;
 
@@ -116,6 +133,7 @@ export default function CategoriesPage() {
           description: values.description || undefined,
           enabled: values.enabled,
           image: nextImage,
+          order: nextCategoryOrder,
         });
       }
       handleCloseModal();
@@ -148,6 +166,19 @@ export default function CategoriesPage() {
     }
   };
 
+  const categoryIds = useMemo(() => categories.map((c) => c.id), [categories]);
+
+  const handleMoveCategory = (category: Category, direction: "up" | "down") => {
+    const i = categoryIds.indexOf(category.id);
+    if (i < 0) return;
+    if (direction === "up" && i === 0) return;
+    if (direction === "down" && i === categoryIds.length - 1) return;
+    const next = [...categoryIds];
+    const j = direction === "up" ? i - 1 : i + 1;
+    [next[i], next[j]] = [next[j], next[i]];
+    reorderCategoriesMutation.mutate(next);
+  };
+
   // Table columns - memoized to prevent recreation
   const columns: Column<Category>[] = useMemo(() => [
     {
@@ -174,6 +205,50 @@ export default function CategoriesPage() {
           </div>
         </div>
       ),
+    },
+    {
+      key: "order",
+      header: "Order",
+      render: (category) => {
+        const i = categoryIds.indexOf(category.id);
+        const canMoveUp = i > 0;
+        const canMoveDown = i >= 0 && i < categoryIds.length - 1;
+        return (
+          <div className="flex items-center gap-1">
+            <span className="text-text-secondary tabular-nums min-w-[1.5rem]">
+              {category.order != null ? category.order : "—"}
+            </span>
+            <div className="flex flex-col">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-text-secondary hover:text-text-primary disabled:opacity-40"
+                disabled={!canMoveUp || reorderCategoriesMutation.isPending}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMoveCategory(category, "up");
+                }}
+              >
+                <ChevronUp className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 -mt-1 text-text-secondary hover:text-text-primary disabled:opacity-40"
+                disabled={!canMoveDown || reorderCategoriesMutation.isPending}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMoveCategory(category, "down");
+                }}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: "enabled",
@@ -248,7 +323,7 @@ export default function CategoriesPage() {
         </div>
       ),
     },
-  ], [handleOpenModal, handleToggleEnabled]);
+  ], [categoryIds, handleMoveCategory, handleOpenModal, handleToggleEnabled, reorderCategoriesMutation.isPending]);
 
   return (
     <div className="space-y-6">
@@ -271,6 +346,11 @@ export default function CategoriesPage() {
           emptyDescription="Create your first category to get started."
           loading={categoriesQuery.isLoading}
           loadingRows={5}
+          sortableConfig={{
+            sortableIds: categoryIds,
+            onReorder: (orderedIds) => reorderCategoriesMutation.mutate(orderedIds),
+            isReordering: reorderCategoriesMutation.isPending,
+          }}
         />
         {totalItems > 0 && (
           <Pagination
