@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getEnabledCategories, getSectionsByCategoryId } from "@/lib/data";
+import { listCategories, getCategoryBySlug } from "@/lib/api/public/menu";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://poolsandpool.co";
 
@@ -24,13 +24,17 @@ export const metadata = {
   },
 };
 
-export default function MenuPage() {
-  const categories = getEnabledCategories();
-
-  const categoriesWithSections = categories.map((category) => ({
-    ...category,
-    sections: getSectionsByCategoryId(category.id),
-  }));
+export default async function MenuPage() {
+  const categories = await listCategories();
+  const categoriesWithSections = await Promise.all(
+    categories.map(async (category) => {
+      const detail = await getCategoryBySlug(category.slug);
+      return {
+        ...category,
+        sections: detail.sections,
+      };
+    })
+  );
 
   return (
     <div className="space-y-8">

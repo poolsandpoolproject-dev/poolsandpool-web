@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
-import { getEnabledCategories } from "@/lib/data";
+import { listCategories } from "@/lib/api/public/menu";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://poolsandpool.co";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const categories = getEnabledCategories();
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const categories = await listCategories();
 
   const staticRoutes: MetadataRoute.Sitemap = [
     {

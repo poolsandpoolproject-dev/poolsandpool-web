@@ -10,13 +10,21 @@ export type ListCategoriesParams = {
 
 export type ListMenuItemsParams = {
   page?: number;
-  pageSize?: number;
+  perPage?: number;
   search?: string;
   categoryId?: string;
   sectionId?: string;
-  availability?: "available" | "unavailable";
-  priceStatus?: "base" | "temporary-active" | "temporary-scheduled";
   includeDisabled?: boolean;
+  available?: boolean;
+  enabled?: boolean;
+};
+
+export type MenuItemSlimSection = { id: string; name: string; slug: string; imageUrl?: string | null };
+export type MenuItemSlimCategory = { id: string; name: string; slug: string; imageUrl?: string | null };
+
+export type MenuItemWithRelations = MenuItem & {
+  section?: MenuItemSlimSection;
+  category?: MenuItemSlimCategory;
 };
 
 function qs(params: Record<string, string | number | boolean | undefined | null>) {
@@ -211,59 +219,130 @@ export function deleteSection(id: string, signal?: AbortSignal) {
 }
 
 export type ListMenuItemsResponse = {
-  items: MenuItem[];
+  data: MenuItemWithRelations[];
   meta: PaginationMeta;
 };
 
-export async function listMenuItems(params: ListMenuItemsParams = {}, signal?: AbortSignal) {
-  const { page = 1, pageSize = 10 } = params;
-  const data = await apiRequest<{ items: MenuItem[]; meta: PaginationMeta }>(
+export function listMenuItems(params: ListMenuItemsParams = {}, signal?: AbortSignal) {
+  return apiRequestRaw<ListMenuItemsResponse>(
     `/admin/menu-items${qs({
-      page,
-      pageSize,
+      page: params.page ?? 1,
+      perPage: params.perPage ?? 20,
       search: params.search,
       categoryId: params.categoryId,
       sectionId: params.sectionId,
-      availability: params.availability,
-      priceStatus: params.priceStatus,
       includeDisabled: params.includeDisabled ?? true,
+      available: params.available,
+      enabled: params.enabled,
     })}`,
     { method: "GET", auth: true, signal }
   );
-  return { items: data.items, meta: data.meta } satisfies ListMenuItemsResponse;
 }
 
 export function getMenuItem(id: string, signal?: AbortSignal) {
-  return apiRequest<MenuItem>(`/admin/menu-items/${id}`, { method: "GET", auth: true, signal });
+  return apiRequest<MenuItemWithRelations>(`/admin/menu-items/${id}`, {
+    method: "GET",
+    auth: true,
+    signal,
+  });
 }
 
-export function createMenuItem(
-  body: Pick<MenuItem, "categoryId" | "sectionId" | "name" | "basePrice"> &
-    Partial<Pick<MenuItem, "slug" | "description" | "imageUrl" | "available" | "enabled">>,
-  signal?: AbortSignal
-) {
-  return apiRequest<MenuItem>("/admin/menu-items", { method: "POST", auth: true, body, signal });
+export type CreateMenuItemInput = {
+  categoryId: string;
+  sectionId: string;
+  name: string;
+  basePrice: number;
+  description?: string;
+  image?: File;
+  imageUrl?: string;
+  available?: boolean;
+  enabled?: boolean;
+};
+
+export function createMenuItem(input: CreateMenuItemInput, signal?: AbortSignal) {
+  if (input.image) {
+    const fd = new FormData();
+    fd.set("categoryId", input.categoryId);
+    fd.set("sectionId", input.sectionId);
+    fd.set("name", input.name);
+    fd.set("basePrice", String(input.basePrice));
+    if (input.description != null) fd.set("description", input.description);
+    fd.set("image", input.image);
+    if (typeof input.available === "boolean") fd.set("available", String(input.available));
+    if (typeof input.enabled === "boolean") fd.set("enabled", String(input.enabled));
+    return apiRequest<MenuItemWithRelations>("/admin/menu-items", {
+      method: "POST",
+      auth: true,
+      body: fd,
+      signal,
+    });
+  }
+  return apiRequest<MenuItemWithRelations>("/admin/menu-items", {
+    method: "POST",
+    auth: true,
+    body: {
+      categoryId: input.categoryId,
+      sectionId: input.sectionId,
+      name: input.name,
+      basePrice: input.basePrice,
+      description: input.description,
+      imageUrl: input.imageUrl,
+      available: input.available ?? true,
+      enabled: input.enabled ?? true,
+    },
+    signal,
+  });
 }
+
+export type UpdateMenuItemInput = Partial<{
+  categoryId: string;
+  sectionId: string;
+  name: string;
+  description: string;
+  basePrice: number;
+  image: File;
+  imageUrl: string;
+  available: boolean;
+  enabled: boolean;
+}>;
 
 export function updateMenuItem(
   id: string,
-  body: Partial<
-    Pick<
-      MenuItem,
-      | "categoryId"
-      | "sectionId"
-      | "name"
-      | "slug"
-      | "description"
-      | "basePrice"
-      | "imageUrl"
-      | "available"
-      | "enabled"
-    >
-  >,
+  body: UpdateMenuItemInput,
   signal?: AbortSignal
 ) {
-  return apiRequest<MenuItem>(`/admin/menu-items/${id}`, { method: "PATCH", auth: true, body, signal });
+  if (body.image) {
+    const fd = new FormData();
+    if (body.categoryId !== undefined) fd.set("categoryId", body.categoryId);
+    if (body.sectionId !== undefined) fd.set("sectionId", body.sectionId);
+    if (body.name !== undefined) fd.set("name", body.name);
+    if (body.description !== undefined) fd.set("description", body.description);
+    if (typeof body.basePrice === "number") fd.set("basePrice", String(body.basePrice));
+    fd.set("image", body.image);
+    if (typeof body.available === "boolean") fd.set("available", String(body.available));
+    if (typeof body.enabled === "boolean") fd.set("enabled", String(body.enabled));
+    return apiRequest<MenuItemWithRelations>(`/admin/menu-items/${id}`, {
+      method: "PATCH",
+      auth: true,
+      body: fd,
+      signal,
+    });
+  }
+  return apiRequest<MenuItemWithRelations>(`/admin/menu-items/${id}`, {
+    method: "PATCH",
+    auth: true,
+    body: {
+      categoryId: body.categoryId,
+      sectionId: body.sectionId,
+      name: body.name,
+      description: body.description,
+      basePrice: body.basePrice,
+      imageUrl: body.imageUrl,
+      available: body.available,
+      enabled: body.enabled,
+    },
+    signal,
+  });
 }
 
 export function setMenuItemAvailability(id: string, available: boolean, signal?: AbortSignal) {

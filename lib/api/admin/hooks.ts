@@ -139,3 +139,51 @@ export function useMenuItems(params: menuApi.ListMenuItemsParams) {
   });
 }
 
+export function useMenuItem(id: string | null, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: id ? queryKeys.menuItem(id) : ["admin", "menu-item", null],
+    queryFn: ({ signal }) => {
+      if (!id) throw new Error("Menu item id is required");
+      return menuApi.getMenuItem(id, signal);
+    },
+    enabled: (options?.enabled ?? !!id) && !!id,
+  });
+}
+
+export function useCreateMenuItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: menuApi.CreateMenuItemInput) => menuApi.createMenuItem(body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "menu-items"] }),
+  });
+}
+
+export function useUpdateMenuItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: string; body: menuApi.UpdateMenuItemInput }) =>
+      menuApi.updateMenuItem(vars.id, vars.body),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["admin", "menu-items"] });
+      qc.invalidateQueries({ queryKey: queryKeys.menuItem(vars.id) });
+    },
+  });
+}
+
+export function useSetMenuItemAvailability() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: string; available: boolean }) =>
+      menuApi.setMenuItemAvailability(vars.id, vars.available),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "menu-items"] }),
+  });
+}
+
+export function useDeleteMenuItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => menuApi.deleteMenuItem(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "menu-items"] }),
+  });
+}
+

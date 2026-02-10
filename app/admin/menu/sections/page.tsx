@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Plus, Edit2, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Edit2, Trash2, ChevronUp, ChevronDown, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -40,6 +40,7 @@ export default function SectionsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [orderInfoDialogOpen, setOrderInfoDialogOpen] = useState(false);
 
   const perPage = 20;
 
@@ -428,11 +429,34 @@ export default function SectionsPage() {
           </SelectContent>
         </Select>
         {canReorderSections && (
-          <p className="text-sm text-text-secondary">
-            Order is per category. Use the drag handle or arrows to reorder sections within the selected category.
-          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 text-text-secondary hover:text-text-primary"
+            onClick={() => setOrderInfoDialogOpen(true)}
+            title="How reordering works"
+          >
+            <Info className="h-4 w-4" />
+          </Button>
         )}
       </div>
+
+      <Dialog open={orderInfoDialogOpen} onOpenChange={setOrderInfoDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-text-primary">Reorder sections</DialogTitle>
+            <DialogDescription className="text-text-secondary">
+              Order is per category. Use the drag handle or arrows to reorder sections within the selected category.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOrderInfoDialogOpen(false)} className="text-text-secondary">
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-0">
         <DataTable

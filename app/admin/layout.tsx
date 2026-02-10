@@ -253,13 +253,13 @@ export default function AdminLayout({
   );
 
   return (
-    <div className="min-h-screen bg-background-alt">
-      <div className="flex">
+    <div className="h-screen overflow-hidden bg-background-alt flex flex-col">
+      <div className="flex flex-1 min-h-0">
         {/* Desktop Sidebar */}
         <aside
-          className={`hidden md:block ${
+          className={`hidden md:block shrink-0 ${
             sidebarOpen ? "w-64" : "w-16"
-          } bg-white border-r border-border min-h-screen sticky top-0 transition-all duration-300`}
+          } bg-white border-r border-border h-full transition-all duration-300`}
         >
           <SidebarContent isMobile={false} />
         </aside>
@@ -271,7 +271,7 @@ export default function AdminLayout({
           </SheetContent>
         </Sheet>
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
           {/* Header Bar */}
           <header className="h-16 bg-white border-b border-border sticky top-0 z-10 flex items-center">
             <div className="px-4 md:px-6 w-full flex items-center justify-between">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getCategoryBySlug } from "@/lib/data";
+import { getCategoryBySlug } from "@/lib/api/public/menu";
+import { ApiError } from "@/lib/api/shared/client";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://poolsandpool.co";
 
@@ -10,10 +11,12 @@ type LayoutProps = {
 
 export async function generateMetadata({ params }: LayoutProps): Promise<Metadata> {
   const { categorySlug } = await params;
-  const category = getCategoryBySlug(categorySlug);
-
-  if (!category) {
-    return { title: "Category Not Found" };
+  let category;
+  try {
+    category = await getCategoryBySlug(categorySlug);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return { title: "Category Not Found" };
+    throw e;
   }
 
   const title = `${category.name} Menu`;

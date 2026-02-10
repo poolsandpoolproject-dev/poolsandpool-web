@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
-import { getCategoryBySlug, getSectionsByCategoryId, getMenuItemsByCategoryId } from "@/lib/data";
+import { getCategoryBySlug } from "@/lib/api/public/menu";
+import type { PublicMenuItemFromApi } from "@/lib/api/public/menu";
+import { ApiError } from "@/lib/api/shared/client";
 import { CategoryHero } from "@/components/public/category-hero";
 import { SectionLinks } from "@/components/public/section-links";
 import { Container } from "@/components/ui/container";
@@ -11,20 +13,18 @@ interface CategoryPageProps {
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { categorySlug } = await params;
 
-  const category = getCategoryBySlug(categorySlug);
-  if (!category || !category.enabled) notFound();
+  let category;
+  try {
+    category = await getCategoryBySlug(categorySlug);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) notFound();
+    throw e;
+  }
 
-  const sections = getSectionsByCategoryId(category.id);
-  const menuItems = getMenuItemsByCategoryId(category.id);
+  const sections = category.sections;
+  const hasAnyItems = sections.some((s) => (s.menuItems?.length ?? 0) > 0);
 
-  const itemsBySection = sections.reduce((acc, section) => {
-    acc[section.id] = menuItems.filter((item) => item.sectionId === section.id);
-    return acc;
-  }, {} as Record<string, typeof menuItems>);
-
-  const uncategorizedItems = menuItems.filter((item) => !sections.some((s) => s.id === item.sectionId));
-
-  const MenuItemRow = ({ item }: { item: (typeof menuItems)[number] }) => {
+  const MenuItemRow = ({ item }: { item: PublicMenuItemFromApi }) => {
     return (
       <div className="border-b border-white/10 pb-5 ">
         <div className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-2">
@@ -33,7 +33,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           ) : null}
           <div className="min-w-0 text-white font-bold tracking-wide uppercase text-base">{item.name}</div>
           <div className="shrink-0 text-right text-white text-base">
-            {item.currentPrice.toLocaleString()} <span className="text-white">₦</span>
+            {Number(item.effectivePrice).toLocaleString()} <span className="text-white">₦</span>
           </div>
         </div>
       </div>
@@ -46,14 +46,21 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
       <SectionLinks title={`${category.name} Menu`} sections={sections.map((s) => ({ id: s.id, name: s.name }))} />
 
-      {sections.length === 0 && menuItems.length === 0 ? (
-        <div className="text-center py-12 text-text-secondary">
-          <p>No menu items available in this category yet.</p>
+      {sections.length === 0 || !hasAnyItems ? (
+        <div className="relative overflow-hidden py-12 xl:py-16">
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/pattern.png")' }} />
+          <div className="absolute inset-0 bg-black/55" />
+          <Container className="relative z-10">
+            <div className="text-center py-16 rounded-3xl border border-white/10 bg-black/30 backdrop-blur-sm">
+              <p className="text-white/90 text-lg">No sections or menu items in this category yet.</p>
+              <p className="text-white/70 text-sm mt-2">Check back later for updates.</p>
+            </div>
+          </Container>
         </div>
       ) : (
         <div className="">
           {sections.map((section) => {
-            const items = itemsBySection[section.id] || [];
+            const items = section.menuItems ?? [];
             if (items.length === 0) return null;
 
             return (
@@ -97,34 +104,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             );
           })}
 
-          {uncategorizedItems.length > 0 && (
-            <div className="relative overflow-hidden py-12 xl:py-16">
-              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/pattern.png")' }} />
-              <div className="absolute inset-0 bg-black/55" />
-
-              <Container className="relative z-10">
-                <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/30 backdrop-blur-sm">
-                  <div className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/items.png")' }} />
-                    <div className="absolute inset-0 bg-black/55" />
-                    <div className="relative z-10 px-6 py-10 sm:px-10">
-                      <h2 className="text-4xl sm:text-5xl font-semibold text-white font-serif tracking-wide">
-                        Other Items
-                      </h2>
-                    </div>
-                  </div>
-
-                  <div className="px-6 py-6 sm:px-10 sm:py-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                      {uncategorizedItems.map((item) => (
-                        <MenuItemRow key={item.id} item={item} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </Container>
-            </div>
-          )}
         </div>
       )}
     </div>
