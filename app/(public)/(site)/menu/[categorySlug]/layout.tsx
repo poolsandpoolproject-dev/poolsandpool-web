@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
   const url = `${baseUrl}/menu/${categorySlug}`;
   const ogImage = category.imageUrl
     ? { url: category.imageUrl, width: 1200, height: 630, alt: category.name }
-    : { url: `${baseUrl}/graph.png`, width: 1200, height: 630, alt: category.name };
+    : { url: "/graph.png", width: 1200, height: 630, alt: category.name };
 
   return {
     title,

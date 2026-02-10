@@ -17,7 +17,9 @@ const zaloraDisplay = localFont({
   weight: "700",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://poolsandpool.co";
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://poolsandpool.co");
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -38,7 +40,7 @@ export const metadata: Metadata = {
       "Digital menu for Pools & Pool Luxurious Lounge & Bar. Browse our menu of food, drinks, and more.",
     images: [
       {
-        url: `${siteUrl}/graph.png`,
+        url: "/graph.png",
         width: 1200,
         height: 630,
         alt: "Pools & Pool - Luxurious Lounge & Bar",
@@ -50,7 +52,7 @@ export const metadata: Metadata = {
     title: "Pools & Pool - Luxurious Lounge & Bar",
     description:
       "Digital menu for Pools & Pool Luxurious Lounge & Bar. Browse our menu of food, drinks, and more.",
-    images: [`${siteUrl}/graph.png`],
+    images: ["/graph.png"],
   },
   robots: {
     index: true,
