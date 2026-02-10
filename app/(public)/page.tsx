@@ -62,7 +62,7 @@ export default function HomePage() {
         <div className="relative z-10 min-h-screen flex flex-col">
     
 
-          <div className="flex-1 flex flex-col items-center py-20 xl:py-32 text-center px-4">
+          <div className="flex-1 flex flex-col items-center py-32 xl:py-40 text-center px-4">
             <motion.div
               variants={heroItem}
               initial="hidden"
