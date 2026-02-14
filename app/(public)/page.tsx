@@ -55,7 +55,7 @@ export default function HomePage() {
         <Container>
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: 'url("/pattern.jpg"), url("/barpat.jpg")' }}
+          style={{ backgroundImage: 'url("/pattern.png"), url("/barpat.jpg")' }}
         />
         <div className="absolute inset-0 bg-black/75" />
 

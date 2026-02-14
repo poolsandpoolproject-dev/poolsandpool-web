@@ -31,7 +31,7 @@ import { DeleteConfirmationDialog } from "@/components/admin/delete-confirmation
 import { FilterDialog, type FilterOptions } from "@/components/admin/filter-dialog";
 import { SearchInput } from "@/components/admin/search-input";
 import { ImageDropzone } from "@/components/ui/image-dropzone";
-import { adminHooks } from "@/lib/api";
+import { adminHooks, ApiError } from "@/lib/api";
 import type { MenuItemWithRelations } from "@/lib/api/admin/menu";
 import { useForm } from "react-hook-form";
 
@@ -59,6 +59,7 @@ export default function MenuItemsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<MenuItemWithRelations | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const listParams = useMemo(
@@ -152,6 +153,7 @@ export default function MenuItemsPage() {
         available: true,
       });
     }
+    setSubmitError(null);
     setIsModalOpen(true);
   };
 
@@ -159,6 +161,7 @@ export default function MenuItemsPage() {
     setIsModalOpen(false);
     setEditingItem(null);
     setExistingImageUrl(null);
+    setSubmitError(null);
     reset({
       name: "",
       description: "",
@@ -209,7 +212,17 @@ export default function MenuItemsPage() {
       }
       handleCloseModal();
     } catch (error) {
-      console.error("Error saving menu item:", error);
+      if (error instanceof ApiError) {
+        if (error.status === 413) {
+          setSubmitError("Image or file is too large. Please use a smaller image (under 2MB) and try again.");
+        } else if (error.message) {
+          setSubmitError(error.message);
+        } else {
+          setSubmitError("Something went wrong. Please try again.");
+        }
+      } else {
+        setSubmitError("Something went wrong. Please try again.");
+      }
     }
   };
 
@@ -587,6 +600,11 @@ export default function MenuItemsPage() {
                   Item is available
                 </Label>
               </div>
+              {submitError ? (
+                <p className="text-sm text-destructive font-medium" role="alert">
+                  {submitError}
+                </p>
+              ) : null}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseModal} disabled={createMutation.isPending || updateMutation.isPending} className="text-text-secondary">

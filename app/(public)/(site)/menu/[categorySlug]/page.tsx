@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getCategoryBySlug } from "@/lib/api/public/menu";
 import type { PublicMenuItemFromApi } from "@/lib/api/public/menu";
@@ -26,15 +27,35 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   const MenuItemRow = ({ item }: { item: PublicMenuItemFromApi }) => {
     return (
-      <div className="border-b border-white/10 pb-5 ">
-        <div className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-2">
-          {item.description ? (
-            <div className="col-span-2 text-sm text-white italic">{item.description}</div>
-          ) : null}
-          <div className="min-w-0 text-white font-bold tracking-wide uppercase text-base">{item.name}</div>
-          <div className="shrink-0 text-right text-white text-base">
-            {Number(item.effectivePrice).toLocaleString()} <span className="text-white">₦</span>
+      <div className="border-b border-white/10 pb-5 flex flex-col md:flex-row md:gap-4 gap-3">
+        <div className="relative w-full md:w-20 h-40 md:h-20 rounded-lg overflow-hidden bg-white/10 shrink-0">
+          {item.imageUrl ? (
+            <Image
+              src={item.imageUrl}
+              alt={item.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 80px"
+              unoptimized
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-white/50 text-xs uppercase">No image</div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-white font-bold tracking-wide uppercase text-base md:text-base min-w-0">
+              {item.name}
+            </h3>
+            <span className="shrink-0 text-white text-base font-semibold">
+              {Number(item.effectivePrice).toLocaleString()} ₦
+            </span>
           </div>
+          {item.description ? (
+            <p className="text-white/80 text-sm italic line-clamp-3 md:line-clamp-none">
+              {item.description}
+            </p>
+          ) : null}
         </div>
       </div>
     );
