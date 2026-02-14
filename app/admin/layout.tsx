@@ -16,6 +16,7 @@ import {
   User,
   Settings,
   LogOut,
+  ExternalLink,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -249,6 +250,23 @@ export default function AdminLayout({
           ) : null}
         </div>
       </nav>
+
+      <div className="border-t border-border p-4">
+        <Link
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => isMobile && setMobileSidebarOpen(false)}
+          className={`flex items-center rounded-lg transition-colors ${
+            (!isMobile && sidebarOpen) || isMobile
+              ? "gap-3 px-3 py-2"
+              : "justify-center px-2 py-2 mx-auto w-10"
+          } text-text-secondary hover:bg-background-alt hover:text-primary`}
+        >
+          <ExternalLink className="h-5 w-5 shrink-0" />
+          {((!isMobile && sidebarOpen) || isMobile) && <span>Go to website</span>}
+        </Link>
+      </div>
     </div>
   );
 
